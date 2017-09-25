@@ -1,1 +1,1 @@
-# sqs-utils
+# sqs-utils [![Build Status](https://travis-ci.org/Mercateo/sqs-utils.svg?branch=master)](https://travis-ci.org/Mercateo/sqs-utils) [![Coverage Status](https://coveralls.io/repos/github/Mercateo/sqs-utils/badge.svg)](https://coveralls.io/github/Mercateo/sqs-utils?branch=master) [![MavenCentral](https://img.shields.io/maven-central/v/com.mercateo.sqs/sqs-utils.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.mercateo.sqs%22%20AND%20a%3A%22sqs-utils%22) 
