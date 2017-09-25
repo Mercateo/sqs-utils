@@ -9,6 +9,7 @@ public class HelloWorldTest {
 	@Test
 	public void dummy() {
 		assertTrue(true);
+
 	}
 
 }
