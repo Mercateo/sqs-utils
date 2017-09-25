@@ -8,6 +8,7 @@ public class HelloWorldTest {
 
 	@Test
 	public void dummy() {
+		new HelloWorld();
 		assertTrue(true);
 
 	}
