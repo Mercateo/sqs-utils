@@ -39,6 +39,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jackson.version>2.7.9</jackson.version>
 		<jmh.version>1.18</jmh.version>
+		<aws-sdk-sqs.version>1.11.142</aws-sdk-sqs.version>
+		<slf4j.version>1.7.12</slf4j.version>
+		<log4j.version>2.2</log4j.version>
 	</properties>
 	<developers>
 		<developer>
@@ -144,7 +147,68 @@
 			</plugin>
 		</plugins>
 	</build>
+
+
 	<dependencies>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-sqs</artifactId>
+			<version>${aws-sdk-sqs.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.16.10</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.inject</groupId>
+			<artifactId>javax.inject</artifactId>
+			<version>1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.21</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-aws-messaging</artifactId>
+			<version>1.2.1.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-autoconfigure</artifactId>
+			<version>1.4.3.RELEASE</version>
+		</dependency>
+
+
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.16.10</version>
+		</dependency>
+
+
+
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>3.4.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.awaitility</groupId>
+			<artifactId>awaitility</artifactId>
+			<version>2.0.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava-testlib</artifactId>
+			<version>19.0</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
@@ -159,7 +223,7 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>1.10.19</version>
+			<version>2.7.15</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -169,6 +233,8 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+
 	<profiles>
 		<profile>
 			<id>release-sign-artifacts</id>
