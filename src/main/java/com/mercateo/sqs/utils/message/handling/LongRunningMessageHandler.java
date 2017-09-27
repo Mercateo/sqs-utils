@@ -86,28 +86,24 @@ public class LongRunningMessageHandler<I, O> {
     /**
      * Submits a task for the processing of the message into the internal executor.
      * Schedules a timeoutExtender that takes care of extending the visibility
-     * timeout until and during message processing.<br/>
-     * <br/>
+     * timeout until and during message processing.
      *
-     * Returns iff there is at least one free slot in the internal executor i.e.
+     * <p>Returns iff there is at least one free slot in the internal executor i.e.
      * that new messages can be consumed. That way we guarantee that we can handle
      * an incoming maxNumberOfMessages on the next iteration. Returning from this
-     * method does *not* mean the message has already been processed, it simply
-     * means that it is in processing.<br/>
-     * <br/>
+     * method does <b>not</b> mean the message has already been processed, it simply
+     * means that it is in processing.
      *
-     * This method should only be called from a single thread, from a single
-     * SqsListener and only once per message.<br/>
-     * <br/>
+     * <p>This method should only be called from a single thread, from a single
+     * SqsListener and only once per message.
      *
-     * The SimpleMessageListenerContainer dispatches one task per incoming message
+     * <p>The SimpleMessageListenerContainer dispatches one task per incoming message
      * to an internal ThreadPoolExecutor and waits for all the tasks to finish
      * before polling from SQS again. That means we can block each task / thread
      * from returning until a free worker is available without interfering with the
-     * dispatching of other message tasks.<br/>
-     * <br/>
+     * dispatching of other message tasks.
      *
-     * Duplicate messages get discarded based on the MessageId as long as the
+     * <p>Duplicate messages get discarded based on the MessageId as long as the
      * message has not yet been processed.
      *
      * @param message
