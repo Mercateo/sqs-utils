@@ -144,6 +144,9 @@ public class LongRunningMessageHandlerIntegrationTest {
 
         new Thread(() -> uut.handleMessage(message1)).start();
         new Thread(() -> uut.handleMessage(message2)).start();
+        await().until(() -> message1.getPayload().isRunning());
+        await().until(() -> message2.getPayload().isRunning());
+
         Thread thread3 = new Thread(() -> uut.handleMessage(message3));
         thread3.start();
         Thread thread4 = new Thread(() -> uut.handleMessage(message4));
@@ -151,8 +154,6 @@ public class LongRunningMessageHandlerIntegrationTest {
         Thread thread5 = new Thread(() -> uut.handleMessage(message5));
         thread5.start();
 
-        await().until(() -> message1.getPayload().isRunning());
-        await().until(() -> message2.getPayload().isRunning());
         await().until(() -> Thread.State.WAITING == thread3.getState());
         await().until(() -> Thread.State.WAITING == thread4.getState());
         await().until(() -> Thread.State.WAITING == thread5.getState());
