@@ -103,9 +103,6 @@ public class LongRunningMessageHandler<I, O> {
      * from returning until a free worker is available without interfering with the
      * dispatching of other message tasks.
      *
-     * <p>Duplicate messages get discarded based on the MessageId as long as the
-     * message has not yet been processed.
-     *
      * @param message
      *            the message to be processed
      */
