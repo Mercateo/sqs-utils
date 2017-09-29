@@ -36,6 +36,23 @@ public class MyQueueMessageListener {
         messageHandler.handleMessage(message);
     }
 }
+
+@Named
+public class MyMessageWorker implements MessageWorker<InputDataType, OutputDataType> {
+    @Override
+    public OutputDataType work(@NonNull InputDataType input) {
+        // process the `input` and produce some `output`
+        return output;
+    }
+}
+
+@Named
+public class MyMessageFinisher implements FinishedMessageCallback<InputDataType, OutputDataType> {
+    @Override
+    public void call(@NonNull InputDataType input, @NonNull OutputDataType output) {
+        // worker completed, do some optional cleanup
+    }
+}
 ```
 
 * `// 1` Call `LongRunningMessageHandlerFactory#get(...)` to get an instance of the handler and pass in the number of concurrent messages you want the worker to handle. This can be independent of the number of messages you receive per batch from SQS. You also have to specify the interval of timeout extension calls (has to be at least 5 seconds smaller than the default visibility timeout of the queue). The `worker` has to be stateless since it is called from multiple threads for multiple messages.
@@ -51,7 +68,7 @@ The `org.springframework.cloud.aws.messaging.listener.SimpleMessageListenerConta
 After N messages are received they are dispatched to N workers, the spring framework then waits for all messages to be successfully completed and only then initiates a new `ReceiveMessageRequest`. 
 That technique has at least one major flaw: one long running message blocks the other workers from processing more small messages since no new messages are received until all messages have finished processing.
 
-Our library provides a way of dealing with that situation by having a fixed number of workers work on the messages independent of `maxNumberOfMessages`. An internal buffer keeps track of all messages scheduled for processing and knows when a worker is idle. As soon as a single worker is free and the buffer is empty the library enables spring to initiate a new `ReceiveMessageRequest`. The buffer has size `maxNumberOfMessages - 1` because at most `maxNumberOfMessages` can be received, one is guaranteed to be instantly worked on, the rest will be put on hold.
+Our library provides a way of dealing with that situation by having a fixed number of workers work on the messages independent of `maxNumberOfMessages`. An internal buffer keeps track of all messages scheduled for processing and knows when a worker is idle. As soon as a single worker is free and the buffer is empty the library enables spring to initiate a new `ReceiveMessageRequest`. The buffer has size `maxNumberOfMessages - 1` because at most `maxNumberOfMessages` can be received, one is guaranteed to be instantly worked on, while the rest will be put on hold.
 
 In case of long running messages it is advised to configure `maxNumberOfMessages = 1`, in particular if multiple instances of the listener are running, e.g. in EC2. That way the buffer has size 0 and it is guaranteed that all received messages will be processed right away, no message will be waiting. That means no message is in-flight without actually being worked on, enabling other instances to receive those messages.
 
