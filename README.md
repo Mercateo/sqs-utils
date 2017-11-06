@@ -11,7 +11,7 @@ public class MyQueueMessageListener {
  
     private static final String QUEUE_NAME = "your-queue-name-here";
  
-    private final LongRunningMessageHandlerFactory<InputDataType, OutputDataType> messageHandler;
+    private final LongRunningMessageHandler<InputDataType, OutputDataType> messageHandler;
     
     @Inject
     MyQueueMessageListener(
