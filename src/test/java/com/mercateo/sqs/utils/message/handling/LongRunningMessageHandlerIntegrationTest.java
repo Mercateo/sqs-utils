@@ -196,6 +196,7 @@ public class LongRunningMessageHandlerIntegrationTest {
         Message<InputObject> message3 = createMessage(3);
 
         new Thread(() -> uut.handleMessage(message1)).start();
+        await().until(() -> message1.getPayload().isRunning());
         Thread thread2 = new Thread(() -> uut.handleMessage(message2));
         thread2.start();
         await().until(() -> message2.getPayload().isRunning());
