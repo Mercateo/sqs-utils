@@ -26,7 +26,7 @@ import com.google.common.testing.NullPointerTester;
 public class MessageHandlingRunnableTest {
 
     @Mock
-    private MessageWorker<Integer, String> worker;
+    private MessageWorkerWithHeaders<Integer, String> worker;
 
     @Mock
     private Acknowledgment acknowledgment;
@@ -69,7 +69,7 @@ public class MessageHandlingRunnableTest {
     @Test
     public void testRun() throws Throwable {
         // given
-        when(worker.work(3)).thenReturn("3S");
+        when(worker.work(3, message.getHeaders())).thenReturn("3S");
         when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
 
         // when
@@ -86,7 +86,7 @@ public class MessageHandlingRunnableTest {
     public void testRun_workerException() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
-        doThrow(e).when(worker).work(3);
+        doThrow(e).when(worker).work(3, message.getHeaders());
 
         // when
         assertThatThrownBy(uut::run).isInstanceOf(RuntimeException.class).hasCause(e);

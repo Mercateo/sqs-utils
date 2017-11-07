@@ -24,7 +24,7 @@ public class LongRunningMessageHandler<I, O> {
 
     private final VisibilityTimeoutExtenderFactory timeoutExtenderFactory;
 
-    private final MessageWorker<I, O> worker;
+    private final MessageWorkerWithHeaders<I, O> worker;
 
     private final Queue queue;
 
@@ -40,7 +40,7 @@ public class LongRunningMessageHandler<I, O> {
             int maxNumberOfMessages, int numberOfThreads,
             @NonNull MessageHandlingRunnableFactory messageHandlingRunnableFactory,
             @NonNull VisibilityTimeoutExtenderFactory timeoutExtenderFactory,
-            @NonNull MessageWorker<I, O> worker, @NonNull Queue queue,
+            @NonNull MessageWorkerWithHeaders<I, O> worker, @NonNull Queue queue,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull Duration timeUntilVisibilityTimeoutExtension,
             @NonNull Duration awaitShutDown) {
@@ -88,16 +88,19 @@ public class LongRunningMessageHandler<I, O> {
      * Schedules a timeoutExtender that takes care of extending the visibility
      * timeout until and during message processing.
      *
-     * <p>Returns iff there is at least one free slot in the internal executor i.e.
+     * <p>
+     * Returns iff there is at least one free slot in the internal executor i.e.
      * that new messages can be consumed. That way we guarantee that we can handle
      * an incoming maxNumberOfMessages on the next iteration. Returning from this
      * method does <b>not</b> mean the message has already been processed, it simply
      * means that it is in processing.
      *
-     * <p>This method should only be called from a single thread, from a single
+     * <p>
+     * This method should only be called from a single thread, from a single
      * SqsListener and only once per message.
      *
-     * <p>The SimpleMessageListenerContainer dispatches one task per incoming message
+     * <p>
+     * The SimpleMessageListenerContainer dispatches one task per incoming message
      * to an internal ThreadPoolExecutor and waits for all the tasks to finish
      * before polling from SQS again. That means we can block each task / thread
      * from returning until a free worker is available without interfering with the

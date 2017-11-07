@@ -94,7 +94,7 @@ public class LongRunningMessageHandlerFactory {
      * @return a LongRunningMessageHandler instance
      */
     public <I, O> LongRunningMessageHandler<I, O> get(int numberOfThreads,
-            @NonNull MessageWorker<I, O> worker, @NonNull QueueName queueName,
+            @NonNull MessageWorkerWithHeaders<I, O> worker, @NonNull QueueName queueName,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull Duration timeUntilVisibilityTimeoutExtension) {
         return this.get(numberOfThreads, worker, queueName, finishedMessageCallback,
@@ -133,7 +133,7 @@ public class LongRunningMessageHandlerFactory {
      * @return a LongRunningMessageHandler instance
      */
     public <I, O> LongRunningMessageHandler<I, O> get(int numberOfThreads,
-            @NonNull MessageWorker<I, O> worker, @NonNull QueueName queueName,
+            @NonNull MessageWorkerWithHeaders<I, O> worker, @NonNull QueueName queueName,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull Duration timeUntilVisibilityTimeoutExtension,
             @NonNull Duration awaitShutDown) {
@@ -142,5 +142,76 @@ public class LongRunningMessageHandlerFactory {
         return new LongRunningMessageHandler<>(executorService, maxNumberOfMessagesPerBatch,
                 numberOfThreads, messageHandlingRunnableFactory, timeoutExtenderFactory, worker,
                 queue, finishedMessageCallback, timeUntilVisibilityTimeoutExtension, awaitShutDown);
+    }
+
+    /**
+     * Creates a handler which should be called for each incoming message and takes
+     * care of extending the visibility timeout of that message and scheduling the
+     * execution of the message processing.
+     *
+     * @param numberOfThreads
+     *            number of concurrent workers that are allowed to run in parallel
+     * @param worker
+     *            the single worker instance that should do the processing of the
+     *            message; should be stateless
+     * @param queueName
+     *            the name of the queue; required for timeout extension
+     * @param timeUntilVisibilityTimeoutExtension
+     *            the time between visibility timeout extensions; should be at least
+     *            5 seconds smaller than the queue visibility timeout. Smaller
+     *            values mean more frequent extensions of the timeout. A single
+     *            extension sets the timeout to be equal to the original default
+     *            visibility timeout
+     * @param <I>
+     *            the input type of the message payload
+     * @param <O>
+     *            the output type of the message processing
+     * @return a LongRunningMessageHandler instance
+     */
+    public <I, O> LongRunningMessageHandler<I, O> get(int numberOfThreads,
+            @NonNull MessageWorkerWithHeaders<I, O> worker, @NonNull QueueName queueName,
+            @NonNull Duration timeUntilVisibilityTimeoutExtension) {
+        return this.get(numberOfThreads, worker, queueName, (input, output) -> {
+        }, timeUntilVisibilityTimeoutExtension, Duration.ofSeconds(0));
+    }
+
+    /**
+     * Creates a handler which should be called for each incoming message and takes
+     * care of extending the visibility timeout of that message and scheduling the
+     * execution of the message processing.
+     *
+     * @param numberOfThreads
+     *            number of concurrent workers that are allowed to run in parallel
+     * @param worker
+     *            the single worker instance that should do the processing of the
+     *            message; should be stateless
+     * @param queueName
+     *            the name of the queue; required for timeout extension
+     * @param timeUntilVisibilityTimeoutExtension
+     *            the time between visibility timeout extensions; should be at least
+     *            5 seconds smaller than the queue visibility timeout. Smaller
+     *            values mean more frequent extensions of the timeout. A single
+     *            extension sets the timeout to be equal to the original default
+     *            visibility timeout
+     * @param awaitShutDown
+     *            in case of application shutdown this specifies the time frame
+     *            during which the messages can try to finish processing; their
+     *            processing is cancelled if they do not finish in time
+     * @param <I>
+     *            the input type of the message payload
+     * @param <O>
+     *            the output type of the message processing
+     * @return a LongRunningMessageHandler instance
+     */
+    public <I, O> LongRunningMessageHandler<I, O> get(int numberOfThreads,
+            @NonNull MessageWorkerWithHeaders<I, O> worker, @NonNull QueueName queueName,
+            @NonNull Duration timeUntilVisibilityTimeoutExtension,
+            @NonNull Duration awaitShutDown) {
+
+        Queue queue = queueFactory.get(queueName);
+        return new LongRunningMessageHandler<>(executorService, maxNumberOfMessagesPerBatch,
+                numberOfThreads, messageHandlingRunnableFactory, timeoutExtenderFactory, worker,
+                queue, (input, output) -> {
+                }, timeUntilVisibilityTimeoutExtension, awaitShutDown);
     }
 }

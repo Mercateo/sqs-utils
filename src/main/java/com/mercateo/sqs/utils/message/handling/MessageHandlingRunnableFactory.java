@@ -11,7 +11,7 @@ import lombok.NonNull;
 @Named
 public class MessageHandlingRunnableFactory {
 
-    <I, O> MessageHandlingRunnable<I, O> get(@NonNull MessageWorker<I, O> worker,
+    <I, O> MessageHandlingRunnable<I, O> get(@NonNull MessageWorkerWithHeaders<I, O> worker,
             @NonNull Message<I> message,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull SetWithUpperBound<String> messageSet,

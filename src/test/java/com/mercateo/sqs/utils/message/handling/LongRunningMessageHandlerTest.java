@@ -36,7 +36,7 @@ public class LongRunningMessageHandlerTest {
     private VisibilityTimeoutExtenderFactory timeoutExtenderFactory;
 
     @Mock
-    private MessageWorker<Integer, String> worker;
+    private MessageWorkerWithHeaders<Integer, String> worker;
 
     @Mock
     private Queue queue;

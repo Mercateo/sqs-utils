@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MessageHandlingRunnable<I, O> implements Runnable {
 
-    private final MessageWorker<I, O> worker;
+    private final MessageWorkerWithHeaders<I, O> worker;
 
     private final Message<I> message;
 
@@ -21,7 +21,8 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
     private final ScheduledFuture<?> visibilityTimeoutExtender;
 
-    MessageHandlingRunnable(@NonNull MessageWorker<I, O> worker, @NonNull Message<I> message,
+    MessageHandlingRunnable(@NonNull MessageWorkerWithHeaders<I, O> worker,
+            @NonNull Message<I> message,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull SetWithUpperBound<String> messages,
             @NonNull ScheduledFuture<?> visibilityTimeoutExtender) {
@@ -41,7 +42,7 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
                     Acknowledgment.class);
 
             log.info("starting processing of message " + messageId);
-            O outcome = worker.work(message.getPayload());
+            O outcome = worker.work(message.getPayload(), message.getHeaders());
 
             finishedMessageCallback.call(message.getPayload(), outcome);
 

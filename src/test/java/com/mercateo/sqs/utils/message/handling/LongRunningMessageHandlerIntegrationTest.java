@@ -41,7 +41,7 @@ public class LongRunningMessageHandlerIntegrationTest {
     @Mock
     private AmazonSQS sqsClient;
 
-    private MessageWorker<InputObject, String> worker = new TestWorker();
+    private MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
 
     @Mock
     private FinishedMessageCallback<InputObject, String> finishedMessageCallback;
@@ -244,10 +244,10 @@ public class LongRunningMessageHandlerIntegrationTest {
         return new GenericMessage<>(new InputObject(), messageHeaders);
     }
 
-    private class TestWorker implements MessageWorker<InputObject, String> {
+    private class TestWorkerWithHeaders implements MessageWorkerWithHeaders<InputObject, String> {
 
         @Override
-        public String work(InputObject object) throws Exception {
+        public String work(InputObject object, MessageHeaders messageHeaders) throws Exception {
 
             object.start();
 
