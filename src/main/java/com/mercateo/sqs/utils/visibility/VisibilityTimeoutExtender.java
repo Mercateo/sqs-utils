@@ -32,9 +32,12 @@ public class VisibilityTimeoutExtender implements Runnable {
 
     private final ChangeMessageVisibilityRequest request;
 
+    private final Message<?> message;
+
     VisibilityTimeoutExtender(@NonNull AmazonSQS sqsClient, @NonNull Duration newVisibilityTimeout,
             @NonNull Message<?> message, @NonNull String queueUrl) {
         this.sqsClient = sqsClient;
+        this.message = message;
 
         request = new ChangeMessageVisibilityRequest().withQueueUrl(queueUrl).withReceiptHandle(
                 message.getHeaders().get("ReceiptHandle", String.class)).withVisibilityTimeout(
@@ -51,7 +54,7 @@ public class VisibilityTimeoutExtender implements Runnable {
             log.trace("changing message visibility: " + request);
             sqsClient.changeMessageVisibility(request);
         } catch (Exception e) {
-            log.error("error while extending message visibility", e);
+            log.error("error while extending message visibility for " + message.getHeaders().getId(), e);
             throw new RuntimeException(e);
         }
     }
