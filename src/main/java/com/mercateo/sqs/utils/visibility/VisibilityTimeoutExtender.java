@@ -54,7 +54,7 @@ public class VisibilityTimeoutExtender implements Runnable {
             log.trace("changing message visibility: " + request);
             sqsClient.changeMessageVisibility(request);
         } catch (Exception e) {
-            log.error("error while extending message visibility for " + message.getHeaders().getId(), e);
+            log.error("error while extending message visibility for " + message.getHeaders().get("MessageId", String.class), e);
             throw new RuntimeException(e);
         }
     }
