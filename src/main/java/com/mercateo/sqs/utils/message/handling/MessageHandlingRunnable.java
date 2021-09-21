@@ -17,11 +17,11 @@ package com.mercateo.sqs.utils.message.handling;
 
 import java.util.concurrent.ScheduledFuture;
 
-import org.springframework.cloud.aws.messaging.listener.Acknowledgment;
-import org.springframework.messaging.Message;
-
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.cloud.aws.messaging.listener.Acknowledgment;
+import org.springframework.messaging.Message;
 
 @Slf4j
 public class MessageHandlingRunnable<I, O> implements Runnable {
@@ -63,6 +63,8 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
             acknowledgment.acknowledge().get();
             log.info("message task successfully processed and message acknowledged: " + messageId);
+        } catch (InterruptedException e) {
+            log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
             log.error("error while handling message " + messageId + ": " + message.getPayload(), e);
             throw new RuntimeException(e);
