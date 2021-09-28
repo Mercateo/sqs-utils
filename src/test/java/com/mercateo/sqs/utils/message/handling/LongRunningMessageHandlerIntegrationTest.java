@@ -1,16 +1,20 @@
 package com.mercateo.sqs.utils.message.handling;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.awaitility.Awaitility.await;
-import static org.awaitility.Awaitility.to;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.MockitoAnnotations.openMocks;
+
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.mercateo.sqs.utils.queue.Queue;
+import com.mercateo.sqs.utils.queue.QueueName;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -18,42 +22,38 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.mercateo.sqs.utils.queue.Queue;
-import com.mercateo.sqs.utils.queue.QueueName;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
-
-import lombok.Getter;
-
+@Slf4j
 public class LongRunningMessageHandlerIntegrationTest {
 
-    private MessageHandlingRunnableFactory messageHandlingRunnableFactory = new MessageHandlingRunnableFactory();
+    private final MessageHandlingRunnableFactory messageHandlingRunnableFactory = new MessageHandlingRunnableFactory();
 
     @Mock
     private AmazonSQS sqsClient;
 
-    private MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
+    private final MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
 
     @Mock
     private FinishedMessageCallback<InputObject, String> finishedMessageCallback;
 
     @Spy
-    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
     private LongRunningMessageHandler<InputObject, String> uut;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        openMocks(this);
         Map<String, String> attributes = new HashMap<>();
         attributes.put("VisibilityTimeout", "10");
         Queue queue = new Queue(new QueueName("queueName"), "queueUrl", attributes);
@@ -159,9 +159,10 @@ public class LongRunningMessageHandlerIntegrationTest {
         await().until(() -> Thread.State.WAITING == thread5.getState());
 
         // when
-        assertThatThrownBy(() -> uut.handleMessage(message6));
+        Throwable result = catchThrowable(() -> uut.handleMessage(message6));
 
         // then
+        assertThat(result).isInstanceOf(RuntimeException.class);
         assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1",
                 "messageId2", "messageId3", "messageId4", "messageId5");
     }
@@ -252,7 +253,7 @@ public class LongRunningMessageHandlerIntegrationTest {
 
             object.start();
 
-            await().untilCall(to(object).isFinished(), equalTo(true));
+            await().until(object::isFinished);
 
             object.stop();
 
