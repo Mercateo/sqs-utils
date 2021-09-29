@@ -53,11 +53,11 @@ public class LongRunningMessageHandlerFactoryIntegrationTest {
     public void graceful_shutdown_wait_for_tasks_to_complete_on_shutdown() {
         // given
         var longRunningMessageHandler = longRunningMessageHandlerFactory.get(1, worker(), queue(), finishedCallback(), Duration.ofMillis(1), true);
-        var messages = IntStream.range(0, 100).mapToObj(this::message).collect(Collectors.toList());
+        var messages = IntStream.range(0, 300).mapToObj(this::message).collect(Collectors.toList());
 
         // when
         log.info("start " + messages.size() + " messages");
-        messages.forEach(longRunningMessageHandler::handleMessage);
+        messages.forEach(longRunningMessageHandler::handleMessage); // this is executed sequentially - cannot test concurrent behavior
 
         log.info("close longRunningMessageHandler");
         longRunningMessageHandler.close();
@@ -75,11 +75,11 @@ public class LongRunningMessageHandlerFactoryIntegrationTest {
     public void graceful_shutdown_do_not_wait_for_tasks_to_complete_on_shutdown() {
         // given
         var longRunningMessageHandler = longRunningMessageHandlerFactory.get(1, worker(), queue(), finishedCallback(), Duration.ofMillis(1), false);
-        var messages = IntStream.range(0, 100).mapToObj(this::message).collect(Collectors.toList());
+        var messages = IntStream.range(0, 10_000).mapToObj(this::message).collect(Collectors.toList());
 
         // when
         log.info("start " + messages.size() + " messages");
-        messages.forEach(longRunningMessageHandler::handleMessage);
+        messages.forEach(longRunningMessageHandler::handleMessage); // this is executed sequentially - cannot test concurrent behavior
 
         log.info("close longRunningMessageHandler");
         longRunningMessageHandler.close();
