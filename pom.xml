@@ -7,7 +7,7 @@
 	</parent>
 	<artifactId>sqs-utils</artifactId>
 	<groupId>com.mercateo.sqs</groupId>
-	<version>0.2.0-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>sqs-utils</name>
 	<description>Some utility classes for AWS SQS</description>

@@ -62,7 +62,7 @@ public class LongRunningMessageHandlerIntegrationTest {
 
         uut = new LongRunningMessageHandler<>(scheduledExecutorService, 4, 2,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
-                finishedMessageCallback, Duration.ofMillis(1), Duration.ZERO);
+                finishedMessageCallback, Duration.ofMillis(1), false);
     }
 
     @Test

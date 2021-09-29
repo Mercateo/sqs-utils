@@ -1,12 +1,12 @@
 /**
  * Copyright © 2017 Mercateo AG (http://www.mercateo.com)
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,20 +15,21 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import java.time.Duration;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import org.springframework.messaging.Message;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
 import com.mercateo.sqs.utils.queue.Queue;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
+import java.time.Duration;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.messaging.Message;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Slf4j
 public class LongRunningMessageHandler<I, O> {
@@ -51,14 +52,18 @@ public class LongRunningMessageHandler<I, O> {
 
     private final ScheduledExecutorService timeoutExtensionExecutor;
 
+    private final AtomicBoolean isRunning = new AtomicBoolean(true);
+
     LongRunningMessageHandler(@NonNull ScheduledExecutorService timeoutExtensionExecutor,
-            int maxNumberOfMessages, int numberOfThreads,
-            @NonNull MessageHandlingRunnableFactory messageHandlingRunnableFactory,
-            @NonNull VisibilityTimeoutExtenderFactory timeoutExtenderFactory,
-            @NonNull MessageWorkerWithHeaders<I, O> worker, @NonNull Queue queue,
-            @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
-            @NonNull Duration timeUntilVisibilityTimeoutExtension,
-            @NonNull Duration awaitShutDown) {
+              int maxNumberOfMessages,
+              int numberOfThreads,
+              @NonNull MessageHandlingRunnableFactory messageHandlingRunnableFactory,
+              @NonNull VisibilityTimeoutExtenderFactory timeoutExtenderFactory,
+              @NonNull MessageWorkerWithHeaders<I, O> worker,
+              @NonNull Queue queue,
+              @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
+              @NonNull Duration timeUntilVisibilityTimeoutExtension,
+              boolean waitForTasksToCompleteOnShutdown) {
         if (timeUntilVisibilityTimeoutExtension.isZero() || timeUntilVisibilityTimeoutExtension
                 .isNegative()) {
             throw new IllegalArgumentException("the timeout has to be > 0");
@@ -74,16 +79,13 @@ public class LongRunningMessageHandler<I, O> {
         messageProcessingExecutor = new ThreadPoolTaskExecutor();
         messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
         messageProcessingExecutor.setCorePoolSize(numberOfThreads);
+        messageProcessingExecutor.setWaitForTasksToCompleteOnShutdown(waitForTasksToCompleteOnShutdown);
         /*
          * Since we only accept new messages if one slot in the messagesInProcessing-Set
          * / executor is free we can schedule at least one message for instant execution
          * while (maxNumberOfMessages - 1) will be put into the queue
          */
         messageProcessingExecutor.setQueueCapacity(maxNumberOfMessages - 1);
-        messageProcessingExecutor.setAwaitTerminationSeconds((int) awaitShutDown.getSeconds());
-        if (awaitShutDown.getSeconds() > 0) {
-            Runtime.getRuntime().addShutdownHook(new Thread(messageProcessingExecutor::shutdown));
-        }
         messageProcessingExecutor.afterPropertiesSet();
 
         messagesInProcessing = new SetWithUpperBound<>(numberOfThreads);
@@ -93,7 +95,7 @@ public class LongRunningMessageHandler<I, O> {
             throw new IllegalStateException("The extension interval of "
                     + timeUntilVisibilityTimeoutExtension.getSeconds()
                     + " is too close to the VisibilityTimeout of " + queue
-                            .getDefaultVisibilityTimeout().getSeconds()
+                    .getDefaultVisibilityTimeout().getSeconds()
                     + " seconds of the queue, has to be at least 5 seconds less.");
         }
     }
@@ -153,7 +155,10 @@ public class LongRunningMessageHandler<I, O> {
     }
 
     private void scheduleNewMessageTask(@NonNull Message<I> message,
-            ScheduledFuture<?> visibilityTimeoutExtender) {
+                                        ScheduledFuture<?> visibilityTimeoutExtender) {
+        if (!isRunning.get()) {
+            throw new IllegalStateException("must not handle new message: handler does not run any longer");
+        }
         MessageHandlingRunnable<I, O> messageTask = messageHandlingRunnableFactory.get(worker,
                 message, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender);
 
@@ -175,4 +180,12 @@ public class LongRunningMessageHandler<I, O> {
     SetWithUpperBound<String> getMessagesInProcessing() {
         return messagesInProcessing;
     }
+
+    void close() {
+        isRunning.set(false);
+        messagesInProcessing.interrupt();
+        messageProcessingExecutor.shutdown();
+        timeoutExtensionExecutor.shutdown();
+    }
+
 }

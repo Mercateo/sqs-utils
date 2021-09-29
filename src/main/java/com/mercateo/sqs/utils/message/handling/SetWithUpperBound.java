@@ -49,6 +49,10 @@ class SetWithUpperBound<T> {
 
     void remove(@NonNull T object) {
         backingSet.remove(object);
+        interrupt();
+    }
+
+    void interrupt() {
         synchronized (lock) {
             lock.notifyAll();
         }
