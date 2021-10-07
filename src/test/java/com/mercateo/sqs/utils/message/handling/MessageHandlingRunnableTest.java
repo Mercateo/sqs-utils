@@ -95,10 +95,10 @@ public class MessageHandlingRunnableTest {
         doThrow(new RuntimeException(e)).when(errorHandlingStrategy).handle(e, message);
 
         // when
-        Throwable catchThrowable = catchThrowable(() -> uut.run());
+        Throwable throwable = catchThrowable(() -> uut.run());
 
         // then
-        assertThat(catchThrowable)
+        assertThat(throwable)
                 .isInstanceOf(RuntimeException.class)
                 .hasCause(e);
         verifyZeroInteractions(finishedMessageCallback);
