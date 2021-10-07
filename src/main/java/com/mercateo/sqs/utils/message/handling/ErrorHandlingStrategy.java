@@ -1,5 +1,9 @@
 package com.mercateo.sqs.utils.message.handling;
 
-public interface ErrorHandlingStrategy {
+import org.springframework.messaging.Message;
+
+public interface ErrorHandlingStrategy<I> {
+
+    void handle(Exception e, Message<I> message);
 
 }

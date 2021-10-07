@@ -30,9 +30,10 @@ public class MessageHandlingRunnableFactory {
             @NonNull Message<I> message,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull SetWithUpperBound<String> messageSet,
-            @NonNull ScheduledFuture<?> visibilityTimeoutExtender) {
+            @NonNull ScheduledFuture<?> visibilityTimeoutExtender,
+            @NonNull ErrorHandlingStrategy<I> errorHandlingStrategy) {
 
         return new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messageSet,
-                visibilityTimeoutExtender);
+                visibilityTimeoutExtender, errorHandlingStrategy);
     }
 }
