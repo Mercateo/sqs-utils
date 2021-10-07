@@ -50,6 +50,8 @@ public class LongRunningMessageHandler<I, O> {
     private final Duration timeUntilVisibilityTimeoutExtension;
 
     private final ScheduledExecutorService timeoutExtensionExecutor;
+    
+    private final ErrorHandlingStrategy<I> errorHandlingStrategy;
 
     LongRunningMessageHandler(@NonNull ScheduledExecutorService timeoutExtensionExecutor,
             int maxNumberOfMessages, int numberOfThreads,
@@ -58,7 +60,8 @@ public class LongRunningMessageHandler<I, O> {
             @NonNull MessageWorkerWithHeaders<I, O> worker, @NonNull Queue queue,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull Duration timeUntilVisibilityTimeoutExtension,
-            @NonNull Duration awaitShutDown) {
+            @NonNull Duration awaitShutDown,
+            @NonNull ErrorHandlingStrategy<I> errorHandlingStrategy) {
         if (timeUntilVisibilityTimeoutExtension.isZero() || timeUntilVisibilityTimeoutExtension
                 .isNegative()) {
             throw new IllegalArgumentException("the timeout has to be > 0");
@@ -70,6 +73,7 @@ public class LongRunningMessageHandler<I, O> {
         this.queue = queue;
         this.finishedMessageCallback = finishedMessageCallback;
         this.timeUntilVisibilityTimeoutExtension = timeUntilVisibilityTimeoutExtension;
+        this.errorHandlingStrategy = errorHandlingStrategy;
 
         messageProcessingExecutor = new ThreadPoolTaskExecutor();
         messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
@@ -155,7 +159,7 @@ public class LongRunningMessageHandler<I, O> {
     private void scheduleNewMessageTask(@NonNull Message<I> message,
             ScheduledFuture<?> visibilityTimeoutExtender) {
         MessageHandlingRunnable<I, O> messageTask = messageHandlingRunnableFactory.get(worker,
-                message, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender);
+                message, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender, errorHandlingStrategy);
 
         messageProcessingExecutor.submit(messageTask);
     }

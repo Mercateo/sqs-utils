@@ -15,25 +15,18 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import java.util.concurrent.ScheduledFuture;
-
-import javax.inject.Named;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.Message;
 
-import lombok.NonNull;
+@Slf4j
+class LogAndRethrowStrategy<I> implements ErrorHandlingStrategy<I> {
 
-@Named
-public class MessageHandlingRunnableFactory {
-
-    <I, O> MessageHandlingRunnable<I, O> get(@NonNull MessageWorkerWithHeaders<I, O> worker,
-            @NonNull Message<I> message,
-            @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
-            @NonNull SetWithUpperBound<String> messageSet,
-            @NonNull ScheduledFuture<?> visibilityTimeoutExtender,
-            @NonNull ErrorHandlingStrategy<I> errorHandlingStrategy) {
-
-        return new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messageSet,
-                visibilityTimeoutExtender, errorHandlingStrategy);
+    @Override
+    public void handle(Exception e, Message<I> message) {
+        String messageId = message.getHeaders().get("MessageId", String.class);
+        log.error("error while handling message " + messageId + ": " + message.getPayload(), e);
+        throw new RuntimeException(e);
     }
+
 }
