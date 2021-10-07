@@ -1,15 +1,15 @@
 package com.mercateo.sqs.utils.message.handling;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
+
+import com.google.common.testing.NullPointerTester;
 
 import java.util.HashMap;
 import java.util.concurrent.Future;
@@ -23,8 +23,6 @@ import org.springframework.cloud.aws.messaging.listener.Acknowledgment;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-
-import com.google.common.testing.NullPointerTester;
 
 @SuppressWarnings("boxing")
 public class MessageHandlingRunnableTest {
@@ -45,7 +43,7 @@ public class MessageHandlingRunnableTest {
 
     @Mock
     private ScheduledFuture<?> visibilityTimeoutExtender;
-    
+
     @Mock
     private ErrorHandlingStrategy<Integer> errorHandlingStrategy;
 
@@ -61,6 +59,7 @@ public class MessageHandlingRunnableTest {
         uut = new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messages,
                 visibilityTimeoutExtender, errorHandlingStrategy);
     }
+
     @Test
     public void testNullContracts() throws Exception {
         // given
@@ -93,12 +92,15 @@ public class MessageHandlingRunnableTest {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doThrow(e).when(errorHandlingStrategy).handle(e, message);
+        doThrow(new RuntimeException(e)).when(errorHandlingStrategy).handle(e, message);
 
         // when
-        assertThatThrownBy(uut::run).isInstanceOf(RuntimeException.class).hasCause(e);
+        Throwable catchThrowable = catchThrowable(() -> uut.run());
 
         // then
+        assertThat(catchThrowable)
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(e);
         verifyZeroInteractions(finishedMessageCallback);
         verifyZeroInteractions(acknowledgment);
         verify(visibilityTimeoutExtender).cancel(false);
