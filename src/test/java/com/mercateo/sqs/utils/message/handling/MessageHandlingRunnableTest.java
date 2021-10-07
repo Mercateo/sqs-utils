@@ -1,6 +1,10 @@
 package com.mercateo.sqs.utils.message.handling;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -41,6 +45,9 @@ public class MessageHandlingRunnableTest {
 
     @Mock
     private ScheduledFuture<?> visibilityTimeoutExtender;
+    
+    @Mock
+    private ErrorHandlingStrategy<Integer> errorHandlingStrategy;
 
     private MessageHandlingRunnable<Integer, String> uut;
 
@@ -52,11 +59,8 @@ public class MessageHandlingRunnableTest {
         headerMap.put("Acknowledgment", acknowledgment);
         message = new GenericMessage<>(3, new MessageHeaders(headerMap));
         uut = new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messages,
-                visibilityTimeoutExtender, (e, message) -> {
-            throw new RuntimeException(e);
-        });
+                visibilityTimeoutExtender, errorHandlingStrategy);
     }
-
     @Test
     public void testNullContracts() throws Exception {
         // given
@@ -89,11 +93,30 @@ public class MessageHandlingRunnableTest {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
+        doThrow(e).when(errorHandlingStrategy).handle(e, message);
 
         // when
         assertThatThrownBy(uut::run).isInstanceOf(RuntimeException.class).hasCause(e);
 
         // then
+        verifyZeroInteractions(finishedMessageCallback);
+        verifyZeroInteractions(acknowledgment);
+        verify(visibilityTimeoutExtender).cancel(false);
+        verify(messages).remove("mid");
+    }
+
+    @Test
+    public void testRun_errorHandlingStrategy_swallows_Exception() throws Throwable {
+        // given
+        Exception e = new IllegalArgumentException();
+        doThrow(e).when(worker).work(3, message.getHeaders());
+        doNothing().when(errorHandlingStrategy).handle(e, message);
+
+        // when
+        Throwable throwable = catchThrowable(() -> uut.run());
+
+        // then
+        assertThat(throwable).isNull();
         verifyZeroInteractions(finishedMessageCallback);
         verifyZeroInteractions(acknowledgment);
         verify(visibilityTimeoutExtender).cancel(false);
