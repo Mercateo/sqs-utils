@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 
 @Slf4j
-public class LogAndRethrowStrategy<I> implements ErrorHandlingStrategy<I> {
+class LogAndRethrowStrategy<I> implements ErrorHandlingStrategy<I> {
 
     @Override
     public void handle(Exception e, Message<I> message) {

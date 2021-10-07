@@ -150,8 +150,12 @@ public class LongRunningMessageHandlerFactory {
     public <I, O> LongRunningMessageHandler<I, O> get(int numberOfThreads,
             @NonNull MessageWorkerWithHeaders<I, O> worker, @NonNull QueueName queueName,
             @NonNull Duration timeUntilVisibilityTimeoutExtension) {
-        return this.get(numberOfThreads, worker, queueName, (input, output) -> {
-        }, timeUntilVisibilityTimeoutExtension, Duration.ofSeconds(0));
+        return this.get(numberOfThreads,
+                worker,
+                queueName, 
+                (input, output) -> {}, 
+                timeUntilVisibilityTimeoutExtension,
+                Duration.ofSeconds(0));
     }
 
     /**
@@ -274,9 +278,10 @@ public class LongRunningMessageHandlerFactory {
      *            the input type of the message payload
      * @param <O>
      *            the output type of the message processing
-     *            
+     * 
      * @param errorHandlingStrategy
-     *            TODO docstring
+     *            defines how exceptions thrown by workers are handled and
+     *            propagated from within the framework to the user code.
      * @return a LongRunningMessageHandler instance
      */
     public <I, O> LongRunningMessageHandler<I, O> get(int numberOfThreads,
