@@ -52,7 +52,9 @@ public class MessageHandlingRunnableTest {
         headerMap.put("Acknowledgment", acknowledgment);
         message = new GenericMessage<>(3, new MessageHeaders(headerMap));
         uut = new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messages,
-                visibilityTimeoutExtender);
+                visibilityTimeoutExtender, (e, message) -> {
+            throw new RuntimeException(e);
+        });
     }
 
     @Test
