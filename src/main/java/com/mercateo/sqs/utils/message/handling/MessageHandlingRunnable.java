@@ -66,6 +66,7 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
         } catch (InterruptedException e) {
             log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
+            // TODO needs to be configurable
             log.error("error while handling message " + messageId + ": " + message.getPayload(), e);
             throw new RuntimeException(e);
         } finally {
