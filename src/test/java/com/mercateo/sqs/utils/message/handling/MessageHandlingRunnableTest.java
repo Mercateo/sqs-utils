@@ -1,11 +1,11 @@
 package com.mercateo.sqs.utils.message.handling;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
@@ -88,39 +88,40 @@ public class MessageHandlingRunnableTest {
     }
 
     @Test
-    public void testRun_workerException() throws Throwable {
+    public void testRun_unfiltered_workerException() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
+        Exception e2 = new RuntimeException(e);
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doThrow(new RuntimeException(e)).when(errorHandlingStrategy).handle(e, message);
+        doThrow(e2).when(errorHandlingStrategy).filterNonDLQExceptions(e, message);
 
         // when
-        Throwable throwable = catchThrowable(() -> uut.run());
+        uut.run();
 
         // then
-        assertThat(throwable)
-                .isInstanceOf(RuntimeException.class)
-                .hasCause(e);
         verifyZeroInteractions(finishedMessageCallback);
         verifyZeroInteractions(acknowledgment);
+        verify(errorHandlingStrategy).handleDLQExceptions(e2, message);
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    public void testRun_errorHandlingStrategy_swallows_Exception() throws Throwable {
+    public void testRun_filtered_workerException() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doNothing().when(errorHandlingStrategy).handle(e, message);
+        when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
+        doNothing().when(errorHandlingStrategy).filterNonDLQExceptions(e, message);
 
         // when
-        Throwable throwable = catchThrowable(() -> uut.run());
+        uut.run();
 
         // then
-        assertThat(throwable).isNull();
-        verifyZeroInteractions(finishedMessageCallback);
-        verifyZeroInteractions(acknowledgment);
+        verify(errorHandlingStrategy).filterNonDLQExceptions(e, message);
+        verify(acknowledgment).acknowledge();
+        verifyNoMoreInteractions(errorHandlingStrategy);
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");
     }

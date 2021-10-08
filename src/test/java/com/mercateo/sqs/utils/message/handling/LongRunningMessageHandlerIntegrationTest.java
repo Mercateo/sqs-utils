@@ -48,6 +48,9 @@ public class LongRunningMessageHandlerIntegrationTest {
 
     @Spy
     private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    
+    @Mock
+    private ErrorHandlingStrategy<InputObject> errorHandlingStrategy;
 
     private LongRunningMessageHandler<InputObject, String> uut;
 
@@ -62,7 +65,7 @@ public class LongRunningMessageHandlerIntegrationTest {
 
         uut = new LongRunningMessageHandler<>(scheduledExecutorService, 4, 2,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
-                finishedMessageCallback, Duration.ofMillis(1), Duration.ZERO, (e, message) -> {throw new RuntimeException(e);});
+                finishedMessageCallback, Duration.ofMillis(1), Duration.ZERO, errorHandlingStrategy);
     }
 
     @Test

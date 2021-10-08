@@ -238,7 +238,7 @@ public class LongRunningMessageHandlerFactory {
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull Duration timeUntilVisibilityTimeoutExtension,
             @NonNull Duration awaitShutDown) {
-        ErrorHandlingStrategy<I> errorHandlingStrategy = new LogAndRethrowStrategy<I>();
+        ErrorHandlingStrategy<I> errorHandlingStrategy = new RethrowAndLogStrategy<I>();
         return this.get(numberOfThreads,
                 worker,
                 queueName,

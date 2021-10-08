@@ -14,30 +14,46 @@ import java.util.HashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-public class LogAndRethrowStrategyTest {
+public class RethrowAndLogStrategyTest {
 
     @Mock
     private Acknowledgment acknowledgment;
 
-    private LogAndRethrowStrategy<Integer> uut;
+    private RethrowAndLogStrategy<Integer> uut;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        uut = new LogAndRethrowStrategy<>();
+        uut = new RethrowAndLogStrategy<>();
     }
 
     @Test
-    public void testHandle() {
-        // given
+    public void filterNonDLQExceptions_throws_exception() {
+        // Given
         Exception e = new IllegalArgumentException();
         Message<Integer> message = createMessage();
 
-        // when
-        Throwable throwable = catchThrowable(() -> uut.handle(e, message));
+        // When
+        Throwable throwable = catchThrowable(() -> uut.filterNonDLQExceptions(e, message));
 
-        // then
+        // Then
         assertThat(throwable).isInstanceOf(RuntimeException.class).hasCause(e);
+
+    }
+
+    @Test
+    public void handleDLQExceptions_does_not_throw_exception() {
+
+        // Given
+        Exception e = new IllegalArgumentException();
+        Message<Integer> message = createMessage();
+
+        // When
+        Throwable throwable = catchThrowable(() -> uut.handleDLQExceptions(e, message));
+
+        // Then
+        assertThat(throwable).isNull();
+
     }
 
     private Message<Integer> createMessage() {
@@ -46,4 +62,5 @@ public class LogAndRethrowStrategyTest {
         headerMap.put("Acknowledgment", acknowledgment);
         return new GenericMessage<>(3, new MessageHeaders(headerMap));
     }
+
 }
