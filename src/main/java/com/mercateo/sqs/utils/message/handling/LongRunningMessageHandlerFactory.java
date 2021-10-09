@@ -152,8 +152,9 @@ public class LongRunningMessageHandlerFactory {
             @NonNull Duration timeUntilVisibilityTimeoutExtension) {
         return this.get(numberOfThreads,
                 worker,
-                queueName, 
-                (input, output) -> {}, 
+                queueName,
+                (input, output) -> {
+                },
                 timeUntilVisibilityTimeoutExtension,
                 Duration.ofSeconds(0));
     }
@@ -195,7 +196,8 @@ public class LongRunningMessageHandlerFactory {
         return this.get(numberOfThreads,
                 worker,
                 queueName,
-                (input, output) -> {},
+                (input, output) -> {
+                },
                 timeUntilVisibilityTimeoutExtension,
                 awaitShutDown);
     }
@@ -280,8 +282,8 @@ public class LongRunningMessageHandlerFactory {
      *            the output type of the message processing
      * 
      * @param errorHandlingStrategy
-     *            defines how exceptions thrown by workers are handled and
-     *            propagated from within the framework to the user code.
+     *            defines how the exceptions that are thrown by workers are
+     *            handled, logged and propagated within the framework.
      * @return a LongRunningMessageHandler instance
      */
     public <I, O> LongRunningMessageHandler<I, O> get(int numberOfThreads,

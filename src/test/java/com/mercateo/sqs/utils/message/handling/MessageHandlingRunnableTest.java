@@ -93,7 +93,7 @@ public class MessageHandlingRunnableTest {
         Exception e = new IllegalArgumentException();
         Exception e2 = new RuntimeException(e);
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doThrow(e2).when(errorHandlingStrategy).filterNonDLQExceptions(e, message);
+        doThrow(e2).when(errorHandlingStrategy).filterDLQExceptions(e, message);
 
         // when
         uut.run();
@@ -113,13 +113,13 @@ public class MessageHandlingRunnableTest {
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
         when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
-        doNothing().when(errorHandlingStrategy).filterNonDLQExceptions(e, message);
+        doNothing().when(errorHandlingStrategy).filterDLQExceptions(e, message);
 
         // when
         uut.run();
 
         // then
-        verify(errorHandlingStrategy).filterNonDLQExceptions(e, message);
+        verify(errorHandlingStrategy).filterDLQExceptions(e, message);
         verify(acknowledgment).acknowledge();
         verifyNoMoreInteractions(errorHandlingStrategy);
         verify(visibilityTimeoutExtender).cancel(false);

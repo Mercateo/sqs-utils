@@ -28,18 +28,18 @@ public class RethrowAndLogStrategyTest {
     }
 
     @Test
-    public void filterNonDLQExceptions_throws_exception() {
-        // Given
-        Exception e = new IllegalArgumentException();
-        Message<Integer> message = createMessage();
-
-        // When
-        Throwable throwable = catchThrowable(() -> uut.filterNonDLQExceptions(e, message));
-
-        // Then
-        assertThat(throwable).isInstanceOf(RuntimeException.class).hasCause(e);
-
-    }
+        public void filterDLQExceptions_throws_exception() {
+            // Given
+            Exception e = new IllegalArgumentException();
+            Message<Integer> message = createMessage();
+    
+            // When
+            Throwable throwable = catchThrowable(() -> uut.filterDLQExceptions(e, message));
+    
+            // Then
+            assertThat(throwable).isInstanceOf(RuntimeException.class).hasCause(e);
+    
+        }
 
     @Test
     public void handleDLQExceptions_does_not_throw_exception() {

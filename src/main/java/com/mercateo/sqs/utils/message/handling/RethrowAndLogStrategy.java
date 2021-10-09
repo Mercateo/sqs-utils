@@ -23,7 +23,7 @@ import org.springframework.messaging.Message;
 class RethrowAndLogStrategy<I> implements ErrorHandlingStrategy<I> {
 
     @Override
-    public void filterNonDLQExceptions(Exception e, Message<I> message) {
+    public void filterDLQExceptions(Exception e, Message<I> message) {
         throw new RuntimeException(e);
     }
 

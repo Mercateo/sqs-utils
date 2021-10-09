@@ -67,7 +67,7 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
             try {
                 outcome = worker.work(message.getPayload(), message.getHeaders());
             } catch (Exception e) {
-                errorHandlingStrategy.filterNonDLQExceptions(e, message);
+                errorHandlingStrategy.filterDLQExceptions(e, message);
             }
 
             finishedMessageCallback.call(message.getPayload(), outcome);
