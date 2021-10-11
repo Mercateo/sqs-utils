@@ -1,5 +1,7 @@
 package com.mercateo.sqs.utils.message.handling;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -88,39 +90,38 @@ public class MessageHandlingRunnableTest {
     }
 
     @Test
-    public void testRun_unfiltered_workerException() throws Throwable {
+    public void testRun_throws_workerException_and_does_not_ack() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doThrow(e).when(errorHandlingStrategy).filterDLQExceptions(e, message);
+        doThrow(e).when(errorHandlingStrategy).handle(e, message);
 
         // when
-        uut.run();
+        Throwable result = catchThrowable(() -> uut.run());
 
         // then
         verifyZeroInteractions(finishedMessageCallback);
         verifyZeroInteractions(acknowledgment);
-        verify(errorHandlingStrategy).handleDLQExceptions(e, message);
+        assertThat(result).isEqualTo(e);
+        verify(errorHandlingStrategy).handle(e, message);
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testRun_filtered_workerException() throws Throwable {
+    public void testRun_throws_workerException_and_acks() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
         when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
-        doNothing().when(errorHandlingStrategy).filterDLQExceptions(e, message);
 
         // when
         uut.run();
 
         // then
-        verify(errorHandlingStrategy).filterDLQExceptions(e, message);
+        verify(errorHandlingStrategy).handle(e, message);
         verify(acknowledgment).acknowledge();
-        verifyNoMoreInteractions(errorHandlingStrategy);
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");
     }

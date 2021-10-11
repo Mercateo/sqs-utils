@@ -19,8 +19,15 @@ import org.springframework.messaging.Message;
 
 public interface ErrorHandlingStrategy<I> {
 
-    void filterDLQExceptions(Exception e, Message<I> message) throws Exception;
-
-    void handleDLQExceptions(Exception e, Message<I> message);
+    /**
+     * Defines how exceptions, that are thrown by the worker are handled. If a
+     * message should not be acknowledged, then exception must be thrown.
+     * 
+     * @param e
+     *            the exception thrown by the worker
+     * @param message
+     *            that was incorrectly processed
+     */
+    void handle(Exception e, Message<I> message);
 
 }

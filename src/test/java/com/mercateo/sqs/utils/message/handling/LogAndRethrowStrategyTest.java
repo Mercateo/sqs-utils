@@ -14,45 +14,30 @@ import java.util.HashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-public class RethrowAndLogStrategyTest {
+public class LogAndRethrowStrategyTest {
 
     @Mock
     private Acknowledgment acknowledgment;
 
-    private RethrowAndLogStrategy<Integer> uut;
+    private LogAndRethrowStrategy<Integer> uut;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        uut = new RethrowAndLogStrategy<>();
+        uut = new LogAndRethrowStrategy<>();
     }
 
     @Test
-        public void filterDLQExceptions_throws_exception() {
-            // Given
-            Exception e = new IllegalArgumentException();
-            Message<Integer> message = createMessage();
-    
-            // When
-            Throwable throwable = catchThrowable(() -> uut.filterDLQExceptions(e, message));
-    
-            // Then
-            assertThat(throwable).isInstanceOf(IllegalArgumentException.class);
-    
-        }
-
-    @Test
-    public void handleDLQExceptions_does_not_throw_exception() {
-
+    public void handle_throws_exception() {
         // Given
         Exception e = new IllegalArgumentException();
         Message<Integer> message = createMessage();
 
         // When
-        Throwable throwable = catchThrowable(() -> uut.handleDLQExceptions(e, message));
+        Throwable throwable = catchThrowable(() -> uut.handle(e, message));
 
         // Then
-        assertThat(throwable).isNull();
+        assertThat(throwable).isInstanceOf(IllegalArgumentException.class);
 
     }
 

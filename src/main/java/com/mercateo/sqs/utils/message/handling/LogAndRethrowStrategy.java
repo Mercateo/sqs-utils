@@ -15,22 +15,20 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.Message;
 
 @Slf4j
-class RethrowAndLogStrategy<I> implements ErrorHandlingStrategy<I> {
+class LogAndRethrowStrategy<I> implements ErrorHandlingStrategy<I> {
 
     @Override
-    public void filterDLQExceptions(Exception e, Message<I> message) throws Exception {
-        throw e;
-    }
-
-    @Override
-    public void handleDLQExceptions(Exception e, Message<I> message) {
+    @SneakyThrows
+    public void handle(Exception e, Message<I> message) {
         String messageId = message.getHeaders().get("MessageId", String.class);
         log.error("error while handling message " + messageId + ": " + message.getPayload(), e);
+        throw e;
     }
 
 }

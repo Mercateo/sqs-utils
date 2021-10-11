@@ -15,6 +15,7 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 
 import lombok.NonNull;
@@ -57,29 +58,32 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
     @Override
     public void run() {
         String messageId = message.getHeaders().get("MessageId", String.class);
+        Acknowledgment acknowledgment = message.getHeaders().get("Acknowledgment",
+                Acknowledgment.class);
         try {
-            Acknowledgment acknowledgment = message.getHeaders().get("Acknowledgment",
-                    Acknowledgment.class);
-
             log.info("starting processing of message " + messageId);
 
-            O outcome = null;
-            try {
-                outcome = worker.work(message.getPayload(), message.getHeaders());
-            } catch (Exception e) {
-                errorHandlingStrategy.filterDLQExceptions(e, message);
-            }
+            O outcome = worker.work(message.getPayload(), message.getHeaders());
 
             finishedMessageCallback.call(message.getPayload(), outcome);
-            acknowledgment.acknowledge().get();
+            acknowledge(messageId, acknowledgment);
             log.info("message task successfully processed and message acknowledged: " + messageId);
         } catch (InterruptedException e) {
             log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
-            errorHandlingStrategy.handleDLQExceptions(e, message);
+            errorHandlingStrategy.handle(e, message);
+            acknowledge(messageId, acknowledgment);
         } finally {
             visibilityTimeoutExtender.cancel(false);
             messages.remove(messageId);
+        }
+    }
+
+    private void acknowledge(String messageId, Acknowledgment acknowledgment) {
+        try {
+            acknowledgment.acknowledge().get();
+        } catch (Exception e) {
+            log.error("could not acknowledge " + messageId, e);
         }
     }
 }
