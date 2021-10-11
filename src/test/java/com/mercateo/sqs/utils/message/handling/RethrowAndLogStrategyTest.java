@@ -37,7 +37,7 @@ public class RethrowAndLogStrategyTest {
             Throwable throwable = catchThrowable(() -> uut.filterDLQExceptions(e, message));
     
             // Then
-            assertThat(throwable).isInstanceOf(RuntimeException.class).hasCause(e);
+            assertThat(throwable).isInstanceOf(IllegalArgumentException.class);
     
         }
 

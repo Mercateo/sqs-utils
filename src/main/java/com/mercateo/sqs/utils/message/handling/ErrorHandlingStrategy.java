@@ -19,7 +19,7 @@ import org.springframework.messaging.Message;
 
 public interface ErrorHandlingStrategy<I> {
 
-    void filterDLQExceptions(Exception e, Message<I> message);
+    void filterDLQExceptions(Exception e, Message<I> message) throws Exception;
 
     void handleDLQExceptions(Exception e, Message<I> message);
 

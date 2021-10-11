@@ -91,9 +91,8 @@ public class MessageHandlingRunnableTest {
     public void testRun_unfiltered_workerException() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
-        Exception e2 = new RuntimeException(e);
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doThrow(e2).when(errorHandlingStrategy).filterDLQExceptions(e, message);
+        doThrow(e).when(errorHandlingStrategy).filterDLQExceptions(e, message);
 
         // when
         uut.run();
@@ -101,7 +100,7 @@ public class MessageHandlingRunnableTest {
         // then
         verifyZeroInteractions(finishedMessageCallback);
         verifyZeroInteractions(acknowledgment);
-        verify(errorHandlingStrategy).handleDLQExceptions(e2, message);
+        verify(errorHandlingStrategy).handleDLQExceptions(e, message);
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");
     }
