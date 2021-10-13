@@ -3,12 +3,12 @@ package com.mercateo.sqs.utils.message.handling;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.testing.NullPointerTester;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-
-import com.google.common.testing.NullPointerTester;
 
 public class SetWithUpperBoundTest {
 

@@ -19,9 +19,9 @@ import java.util.concurrent.ScheduledFuture;
 
 import javax.inject.Named;
 
-import org.springframework.messaging.Message;
-
 import lombok.NonNull;
+
+import org.springframework.messaging.Message;
 
 @Named
 public class MessageHandlingRunnableFactory {

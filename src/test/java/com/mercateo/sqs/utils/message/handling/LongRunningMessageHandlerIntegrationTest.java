@@ -12,11 +12,18 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.mercateo.sqs.utils.queue.Queue;
+import com.mercateo.sqs.utils.queue.QueueName;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
+import lombok.Getter;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,13 +33,6 @@ import org.mockito.Spy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.mercateo.sqs.utils.queue.Queue;
-import com.mercateo.sqs.utils.queue.QueueName;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
-
-import lombok.Getter;
 
 public class LongRunningMessageHandlerIntegrationTest {
 

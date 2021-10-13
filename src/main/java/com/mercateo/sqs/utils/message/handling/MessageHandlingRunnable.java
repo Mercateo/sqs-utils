@@ -15,7 +15,6 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 
 import lombok.NonNull;

@@ -2,6 +2,8 @@ package com.mercateo.sqs.utils.queue;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.testing.NullPointerTester;
+
 import java.time.Duration;
 import java.util.Map;
 
@@ -10,8 +12,6 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
-import com.google.common.testing.NullPointerTester;
 
 public class QueueTest {
 

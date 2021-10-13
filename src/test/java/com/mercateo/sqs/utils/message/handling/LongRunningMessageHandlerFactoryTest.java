@@ -2,16 +2,16 @@ package com.mercateo.sqs.utils.message.handling;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.testing.NullPointerTester;
+import com.mercateo.sqs.utils.queue.QueueFactory;
+import com.mercateo.sqs.utils.queue.QueueName;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.cloud.aws.messaging.listener.SimpleMessageListenerContainer;
-
-import com.google.common.testing.NullPointerTester;
-import com.mercateo.sqs.utils.queue.QueueFactory;
-import com.mercateo.sqs.utils.queue.QueueName;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 public class LongRunningMessageHandlerFactoryTest {
 

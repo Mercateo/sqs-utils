@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
+import com.google.common.testing.NullPointerTester;
+import com.google.common.testing.NullPointerTester.Visibility;
+import com.mercateo.sqs.utils.queue.Queue;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,11 +23,6 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-
-import com.google.common.testing.NullPointerTester;
-import com.google.common.testing.NullPointerTester.Visibility;
-import com.mercateo.sqs.utils.queue.Queue;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 public class LongRunningMessageHandlerTest {
 

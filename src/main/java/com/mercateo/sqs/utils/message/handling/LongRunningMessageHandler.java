@@ -15,20 +15,20 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import com.mercateo.sqs.utils.queue.Queue;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
+
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.messaging.Message;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
-import com.mercateo.sqs.utils.queue.Queue;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
-
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.messaging.Message;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Slf4j
 public class LongRunningMessageHandler<I, O> {
