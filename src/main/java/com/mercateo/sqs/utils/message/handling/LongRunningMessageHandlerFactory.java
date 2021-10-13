@@ -15,6 +15,11 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import com.mercateo.sqs.utils.queue.Queue;
+import com.mercateo.sqs.utils.queue.QueueFactory;
+import com.mercateo.sqs.utils.queue.QueueName;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
+
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.concurrent.Executors;
@@ -23,14 +28,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.springframework.cloud.aws.messaging.listener.SimpleMessageListenerContainer;
-
-import com.mercateo.sqs.utils.queue.Queue;
-import com.mercateo.sqs.utils.queue.QueueFactory;
-import com.mercateo.sqs.utils.queue.QueueName;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
-
 import lombok.NonNull;
+
+import org.springframework.cloud.aws.messaging.listener.SimpleMessageListenerContainer;
 
 @Named
 public class LongRunningMessageHandlerFactory {
@@ -152,8 +152,9 @@ public class LongRunningMessageHandlerFactory {
             @NonNull Duration timeUntilVisibilityTimeoutExtension) {
         return this.get(numberOfThreads,
                 worker,
-                queueName, 
-                (input, output) -> {}, 
+                queueName,
+                (input, output) -> {
+                },
                 timeUntilVisibilityTimeoutExtension,
                 Duration.ofSeconds(0));
     }
@@ -195,7 +196,8 @@ public class LongRunningMessageHandlerFactory {
         return this.get(numberOfThreads,
                 worker,
                 queueName,
-                (input, output) -> {},
+                (input, output) -> {
+                },
                 timeUntilVisibilityTimeoutExtension,
                 awaitShutDown);
     }
@@ -280,8 +282,8 @@ public class LongRunningMessageHandlerFactory {
      *            the output type of the message processing
      * 
      * @param errorHandlingStrategy
-     *            defines how exceptions thrown by workers are handled and
-     *            propagated from within the framework to the user code.
+     *            defines how the exceptions that are thrown by workers are
+     *            handled, logged and propagated within the framework.
      * @return a LongRunningMessageHandler instance
      */
     public <I, O> LongRunningMessageHandler<I, O> get(int numberOfThreads,

@@ -2,7 +2,6 @@ package com.mercateo.sqs.utils.message.handling;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -88,39 +87,38 @@ public class MessageHandlingRunnableTest {
     }
 
     @Test
-    public void testRun_workerException() throws Throwable {
+    public void testRun_throws_workerException_and_does_not_ack() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doThrow(new RuntimeException(e)).when(errorHandlingStrategy).handle(e, message);
+        doThrow(e).when(errorHandlingStrategy).handle(e, message);
 
         // when
-        Throwable throwable = catchThrowable(() -> uut.run());
+        Throwable result = catchThrowable(() -> uut.run());
 
         // then
-        assertThat(throwable)
-                .isInstanceOf(RuntimeException.class)
-                .hasCause(e);
         verifyZeroInteractions(finishedMessageCallback);
         verifyZeroInteractions(acknowledgment);
+        assertThat(result).isEqualTo(e);
+        verify(errorHandlingStrategy).handle(e, message);
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    public void testRun_errorHandlingStrategy_swallows_Exception() throws Throwable {
+    public void testRun_throws_workerException_and_acks() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doNothing().when(errorHandlingStrategy).handle(e, message);
+        when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
 
         // when
-        Throwable throwable = catchThrowable(() -> uut.run());
+        uut.run();
 
         // then
-        assertThat(throwable).isNull();
-        verifyZeroInteractions(finishedMessageCallback);
-        verifyZeroInteractions(acknowledgment);
+        verify(errorHandlingStrategy).handle(e, message);
+        verify(acknowledgment).acknowledge();
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");
     }

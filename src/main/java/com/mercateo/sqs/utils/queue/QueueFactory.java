@@ -15,15 +15,15 @@
  */
 package com.mercateo.sqs.utils.queue;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
+import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
+
 import java.util.Collections;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
 
 import lombok.NonNull;
 

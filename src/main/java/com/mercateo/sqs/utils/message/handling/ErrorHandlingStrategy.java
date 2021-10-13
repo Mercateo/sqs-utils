@@ -17,9 +17,17 @@ package com.mercateo.sqs.utils.message.handling;
 
 import org.springframework.messaging.Message;
 
-@FunctionalInterface
 public interface ErrorHandlingStrategy<I> {
 
+    /**
+     * Defines how exceptions, that are thrown by the worker are handled. If a
+     * message should not be acknowledged, then exception must be thrown.
+     * 
+     * @param e
+     *            the exception thrown by the worker
+     * @param message
+     *            that was incorrectly processed
+     */
     void handle(Exception e, Message<I> message);
 
 }

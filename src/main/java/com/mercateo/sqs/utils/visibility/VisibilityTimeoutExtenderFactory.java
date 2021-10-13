@@ -15,17 +15,17 @@
  */
 package com.mercateo.sqs.utils.visibility;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.mercateo.sqs.utils.queue.Queue;
+
 import java.time.Duration;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.springframework.messaging.Message;
-
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.mercateo.sqs.utils.queue.Queue;
-
 import lombok.NonNull;
+
+import org.springframework.messaging.Message;
 
 @Named
 public class VisibilityTimeoutExtenderFactory {

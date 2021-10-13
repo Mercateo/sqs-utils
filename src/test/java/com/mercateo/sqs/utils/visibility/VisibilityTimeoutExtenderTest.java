@@ -3,6 +3,10 @@ package com.mercateo.sqs.utils.visibility;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
+import com.google.common.testing.NullPointerTester;
+
 import java.time.Duration;
 import java.util.HashMap;
 
@@ -13,10 +17,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
-import com.google.common.testing.NullPointerTester;
 
 public class VisibilityTimeoutExtenderTest {
 

@@ -1,6 +1,6 @@
 /**
- * Copyright © 2017 Mercateo AG (http://www.mercateo.com)
  *
+ * Copyright © 2017 Mercateo AG (http://www.mercateo.com)
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,7 +35,7 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
     private final SetWithUpperBound<String> messages;
 
     private final ScheduledFuture<?> visibilityTimeoutExtender;
-    
+
     private final ErrorHandlingStrategy<I> errorHandlingStrategy;
 
     MessageHandlingRunnable(@NonNull MessageWorkerWithHeaders<I, O> worker,
@@ -57,24 +57,32 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
     @Override
     public void run() {
         String messageId = message.getHeaders().get("MessageId", String.class);
+        Acknowledgment acknowledgment = message.getHeaders().get("Acknowledgment",
+                Acknowledgment.class);
         try {
-            Acknowledgment acknowledgment = message.getHeaders().get("Acknowledgment",
-                    Acknowledgment.class);
-
             log.info("starting processing of message " + messageId);
+
             O outcome = worker.work(message.getPayload(), message.getHeaders());
 
             finishedMessageCallback.call(message.getPayload(), outcome);
-
-            acknowledgment.acknowledge().get();
+            acknowledge(messageId, acknowledgment);
             log.info("message task successfully processed and message acknowledged: " + messageId);
         } catch (InterruptedException e) {
             log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
             errorHandlingStrategy.handle(e, message);
+            acknowledge(messageId, acknowledgment);
         } finally {
             visibilityTimeoutExtender.cancel(false);
             messages.remove(messageId);
+        }
+    }
+
+    private void acknowledge(String messageId, Acknowledgment acknowledgment) {
+        try {
+            acknowledgment.acknowledge().get();
+        } catch (Exception e) {
+            log.error("could not acknowledge " + messageId, e);
         }
     }
 }

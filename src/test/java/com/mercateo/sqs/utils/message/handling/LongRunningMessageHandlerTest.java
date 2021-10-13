@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
+import com.google.common.testing.NullPointerTester;
+import com.google.common.testing.NullPointerTester.Visibility;
+import com.mercateo.sqs.utils.queue.Queue;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,11 +23,6 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-
-import com.google.common.testing.NullPointerTester;
-import com.google.common.testing.NullPointerTester.Visibility;
-import com.mercateo.sqs.utils.queue.Queue;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 public class LongRunningMessageHandlerTest {
 
@@ -43,6 +43,9 @@ public class LongRunningMessageHandlerTest {
 
     @Mock
     private FinishedMessageCallback<Integer, String> finishedMessageCallback;
+    
+    @Mock
+    private ErrorHandlingStrategy<Integer> errorHandlingStrategy;
 
     private LongRunningMessageHandler<Integer, String> uut;
 
@@ -52,7 +55,7 @@ public class LongRunningMessageHandlerTest {
         when(queue.getDefaultVisibilityTimeout()).thenReturn(Duration.ofSeconds(120));
         uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 1, 1,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
-                finishedMessageCallback, Duration.ofSeconds(115), Duration.ZERO, (e, message) -> {throw new RuntimeException(e);});
+                finishedMessageCallback, Duration.ofSeconds(115), Duration.ZERO, errorHandlingStrategy);
     }
 
     @Test
@@ -75,7 +78,7 @@ public class LongRunningMessageHandlerTest {
         // when
         uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
-                finishedMessageCallback, Duration.ofSeconds(116), Duration.ZERO, (e, message) -> {throw new RuntimeException(e);});
+                finishedMessageCallback, Duration.ofSeconds(116), Duration.ZERO, errorHandlingStrategy);
 
         // then
         // exception
@@ -88,7 +91,7 @@ public class LongRunningMessageHandlerTest {
         // when
         uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
-                finishedMessageCallback, Duration.ofSeconds(-5), Duration.ZERO, (e, message) -> {throw new RuntimeException(e);});
+                finishedMessageCallback, Duration.ofSeconds(-5), Duration.ZERO, errorHandlingStrategy);
 
         // then
         // exception

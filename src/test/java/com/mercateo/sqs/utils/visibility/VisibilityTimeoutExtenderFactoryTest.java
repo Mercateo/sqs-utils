@@ -1,14 +1,14 @@
 package com.mercateo.sqs.utils.visibility;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.google.common.testing.NullPointerTester;
+import com.mercateo.sqs.utils.queue.Queue;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.google.common.testing.NullPointerTester;
-import com.mercateo.sqs.utils.queue.Queue;
 
 public class VisibilityTimeoutExtenderFactoryTest {
 

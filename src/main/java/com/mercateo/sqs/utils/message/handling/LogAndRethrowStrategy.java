@@ -15,6 +15,7 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.Message;
@@ -23,10 +24,11 @@ import org.springframework.messaging.Message;
 class LogAndRethrowStrategy<I> implements ErrorHandlingStrategy<I> {
 
     @Override
+    @SneakyThrows
     public void handle(Exception e, Message<I> message) {
         String messageId = message.getHeaders().get("MessageId", String.class);
         log.error("error while handling message " + messageId + ": " + message.getPayload(), e);
-        throw new RuntimeException(e);
+        throw e;
     }
 
 }

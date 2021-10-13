@@ -15,15 +15,15 @@
  */
 package com.mercateo.sqs.utils.visibility;
 
-import java.time.Duration;
-
-import org.springframework.messaging.Message;
-
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
 
+import java.time.Duration;
+
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.messaging.Message;
 
 @Slf4j
 public class VisibilityTimeoutExtender implements Runnable {

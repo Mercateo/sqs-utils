@@ -1,11 +1,11 @@
 package com.mercateo.sqs.utils.message.handling;
 
+import com.google.common.testing.NullPointerTester;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import com.google.common.testing.NullPointerTester;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
 
 public class MessageHandlingRunnableFactoryTest {
 
