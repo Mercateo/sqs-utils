@@ -3,8 +3,6 @@ package com.mercateo.sqs.utils.message.handling;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import static org.awaitility.Awaitility.to;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,8 +23,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import lombok.Getter;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -54,9 +52,9 @@ public class LongRunningMessageHandlerIntegrationTest {
 
     private LongRunningMessageHandler<InputObject, String> uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         Map<String, String> attributes = new HashMap<>();
         attributes.put("VisibilityTimeout", "10");
         Queue queue = new Queue(new QueueName("queueName"), "queueUrl", attributes);
@@ -254,9 +252,7 @@ public class LongRunningMessageHandlerIntegrationTest {
         public String work(InputObject object, MessageHeaders messageHeaders) throws Exception {
 
             object.start();
-
-            await().untilCall(to(object).isFinished(), equalTo(true));
-
+            await().until(() -> object.isFinished());
             object.stop();
 
             return "done";

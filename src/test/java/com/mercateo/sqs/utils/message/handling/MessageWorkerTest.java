@@ -2,11 +2,11 @@ package com.mercateo.sqs.utils.message.handling;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.messaging.MessageHeaders;
 
 public class MessageWorkerTest {
@@ -28,6 +28,6 @@ public class MessageWorkerTest {
 
         // then
         assertEquals(1, counter.intValue());
-        verifyZeroInteractions(messageHeaders);
+        verifyNoInteractions(messageHeaders);
     }
 }

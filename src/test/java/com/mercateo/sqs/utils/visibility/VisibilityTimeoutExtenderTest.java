@@ -10,8 +10,8 @@ import com.google.common.testing.NullPointerTester;
 import java.time.Duration;
 import java.util.HashMap;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -25,9 +25,9 @@ public class VisibilityTimeoutExtenderTest {
 
     private VisibilityTimeoutExtender uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         HashMap<String, Object> headerMap = new HashMap<>();
         headerMap.put("ReceiptHandle", "rhd");
         GenericMessage<Object> message = new GenericMessage<>(new Object(), new MessageHeaders(

@@ -2,6 +2,7 @@ package com.mercateo.sqs.utils.message.handling;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -16,8 +17,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.Message;
@@ -43,15 +44,15 @@ public class LongRunningMessageHandlerTest {
 
     @Mock
     private FinishedMessageCallback<Integer, String> finishedMessageCallback;
-    
+
     @Mock
     private ErrorHandlingStrategy<Integer> errorHandlingStrategy;
 
     private LongRunningMessageHandler<Integer, String> uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         when(queue.getDefaultVisibilityTimeout()).thenReturn(Duration.ofSeconds(120));
         uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 1, 1,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
@@ -71,30 +72,26 @@ public class LongRunningMessageHandlerTest {
         nullPointerTester.testConstructors(uut.getClass(), Visibility.PACKAGE);
     }
 
-    @Test(expected = IllegalStateException.class)
     public void timeUntilTimeOutExtensionTooLarge() throws Exception {
-        // given
 
         // when
-        uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
+        Throwable result = catchThrowable(() -> uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
-                finishedMessageCallback, Duration.ofSeconds(116), Duration.ZERO, errorHandlingStrategy);
+                finishedMessageCallback, Duration.ofSeconds(116), Duration.ZERO, errorHandlingStrategy));
 
         // then
-        // exception
+        assertThat(result).isInstanceOf(IllegalStateException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
     public void timeUntilTimeOutNegative() throws Exception {
-        // given
 
         // when
-        uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
+        Throwable result = catchThrowable(() -> uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
-                finishedMessageCallback, Duration.ofSeconds(-5), Duration.ZERO, errorHandlingStrategy);
+                finishedMessageCallback, Duration.ofSeconds(-5), Duration.ZERO, errorHandlingStrategy));
 
         // then
-        // exception
+        assertThat(result).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

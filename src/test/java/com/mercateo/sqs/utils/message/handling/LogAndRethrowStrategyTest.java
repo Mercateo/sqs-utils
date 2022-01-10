@@ -3,13 +3,14 @@ package com.mercateo.sqs.utils.message.handling;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
+import io.awspring.cloud.messaging.listener.Acknowledgment;
+
 import java.util.HashMap;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.cloud.aws.messaging.listener.Acknowledgment;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
@@ -21,9 +22,9 @@ public class LogAndRethrowStrategyTest {
 
     private LogAndRethrowStrategy<Integer> uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         uut = new LogAndRethrowStrategy<>();
     }
 

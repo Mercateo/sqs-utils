@@ -14,8 +14,8 @@ import com.google.common.testing.NullPointerTester;
 
 import java.util.HashMap;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -26,9 +26,9 @@ public class QueueFactoryTest {
 
     private QueueFactory uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         uut = new QueueFactory(amazonSQS);
     }
 

@@ -4,8 +4,8 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.google.common.testing.NullPointerTester;
 import com.mercateo.sqs.utils.queue.Queue;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -17,9 +17,9 @@ public class VisibilityTimeoutExtenderFactoryTest {
 
     private VisibilityTimeoutExtenderFactory uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         uut = new VisibilityTimeoutExtenderFactory(amazonSQS);
     }
 

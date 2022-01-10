@@ -15,12 +15,13 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import io.awspring.cloud.messaging.listener.Acknowledgment;
+
 import java.util.concurrent.ScheduledFuture;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.cloud.aws.messaging.listener.Acknowledgment;
 import org.springframework.messaging.Message;
 
 @Slf4j
