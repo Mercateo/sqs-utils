@@ -7,8 +7,8 @@ import com.google.common.testing.NullPointerTester;
 import java.time.Duration;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -20,9 +20,9 @@ public class QueueTest {
 
     private Queue uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         uut = new Queue(new QueueName("123"), "http://url.de", queueAttributes);
     }
 

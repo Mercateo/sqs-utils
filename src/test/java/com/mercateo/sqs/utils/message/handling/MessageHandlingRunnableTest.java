@@ -5,20 +5,21 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.testing.NullPointerTester;
+
+import io.awspring.cloud.messaging.listener.Acknowledgment;
 
 import java.util.HashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.cloud.aws.messaging.listener.Acknowledgment;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
@@ -48,9 +49,9 @@ public class MessageHandlingRunnableTest {
 
     private MessageHandlingRunnable<Integer, String> uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         HashMap<String, Object> headerMap = new HashMap<>();
         headerMap.put("MessageId", "mid");
         headerMap.put("Acknowledgment", acknowledgment);
@@ -97,8 +98,8 @@ public class MessageHandlingRunnableTest {
         Throwable result = catchThrowable(() -> uut.run());
 
         // then
-        verifyZeroInteractions(finishedMessageCallback);
-        verifyZeroInteractions(acknowledgment);
+        verifyNoInteractions(finishedMessageCallback);
+        verifyNoInteractions(acknowledgment);
         assertThat(result).isEqualTo(e);
         verify(errorHandlingStrategy).handle(e, message);
         verify(visibilityTimeoutExtender).cancel(false);

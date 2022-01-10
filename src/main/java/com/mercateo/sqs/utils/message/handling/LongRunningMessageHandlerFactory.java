@@ -20,6 +20,8 @@ import com.mercateo.sqs.utils.queue.QueueFactory;
 import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
+import io.awspring.cloud.messaging.listener.SimpleMessageListenerContainer;
+
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.concurrent.Executors;
@@ -30,7 +32,6 @@ import javax.inject.Named;
 
 import lombok.NonNull;
 
-import org.springframework.cloud.aws.messaging.listener.SimpleMessageListenerContainer;
 
 @Named
 public class LongRunningMessageHandlerFactory {

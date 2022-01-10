@@ -3,15 +3,15 @@ package com.mercateo.sqs.utils.message.handling;
 import com.google.common.testing.NullPointerTester;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class MessageHandlingRunnableFactoryTest {
 
     private MessageHandlingRunnableFactory uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         uut = new MessageHandlingRunnableFactory();
     }

@@ -7,11 +7,12 @@ import com.mercateo.sqs.utils.queue.QueueFactory;
 import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
-import org.junit.Before;
-import org.junit.Test;
+import io.awspring.cloud.messaging.listener.SimpleMessageListenerContainer;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.cloud.aws.messaging.listener.SimpleMessageListenerContainer;
 
 public class LongRunningMessageHandlerFactoryTest {
 
@@ -26,9 +27,9 @@ public class LongRunningMessageHandlerFactoryTest {
 
     private LongRunningMessageHandlerFactory uut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
         uut = new LongRunningMessageHandlerFactory(messageHandlingRunnableFactory,
                 timeoutExtenderFactory, queueFactory, simpleMessageListenerContainer);
