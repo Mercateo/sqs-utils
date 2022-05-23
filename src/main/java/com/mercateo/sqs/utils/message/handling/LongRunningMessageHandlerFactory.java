@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -57,7 +58,20 @@ public class LongRunningMessageHandlerFactory {
         this.timeoutExtenderFactory = timeoutExtenderFactory;
         this.queueFactory = queueFactory;
 
-        this.executorService = Executors.newScheduledThreadPool(1);
+        this.executorService = Executors.newScheduledThreadPool(1,
+                new ThreadFactory() {
+
+                    private final ThreadFactory threadFactory = Executors.defaultThreadFactory();
+
+                    private int createdThreads = 0;
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread newThread = threadFactory.newThread(r);
+                        newThread.setName(LongRunningMessageHandlerFactory.class.getSimpleName() + "-" + createdThreads++);
+                        return newThread;
+                    }
+                });
 
         this.maxNumberOfMessagesPerBatch = extractMaxNumberOfMessagesFromListenerContainer(
                 simpleMessageListenerContainer);
@@ -308,4 +322,9 @@ public class LongRunningMessageHandlerFactory {
                 awaitShutDown,
                 errorHandlingStrategy);
     }
+
+    public void shutdown() {
+        executorService.shutdownNow();
+    }
+
 }

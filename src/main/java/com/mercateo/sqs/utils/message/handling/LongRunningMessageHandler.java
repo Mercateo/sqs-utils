@@ -53,6 +53,8 @@ public class LongRunningMessageHandler<I, O> {
     
     private final ErrorHandlingStrategy<I> errorHandlingStrategy;
 
+    private final Duration awaitShutDown;
+
     LongRunningMessageHandler(@NonNull ScheduledExecutorService timeoutExtensionExecutor,
             int maxNumberOfMessages, int numberOfThreads,
             @NonNull MessageHandlingRunnableFactory messageHandlingRunnableFactory,
@@ -73,21 +75,19 @@ public class LongRunningMessageHandler<I, O> {
         this.queue = queue;
         this.finishedMessageCallback = finishedMessageCallback;
         this.timeUntilVisibilityTimeoutExtension = timeUntilVisibilityTimeoutExtension;
+        this.awaitShutDown = awaitShutDown;
         this.errorHandlingStrategy = errorHandlingStrategy;
 
         messageProcessingExecutor = new ThreadPoolTaskExecutor();
         messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
         messageProcessingExecutor.setCorePoolSize(numberOfThreads);
+        messageProcessingExecutor.setThreadNamePrefix(getClass().getSimpleName()+"-");
         /*
          * Since we only accept new messages if one slot in the messagesInProcessing-Set
          * / executor is free we can schedule at least one message for instant execution
          * while (maxNumberOfMessages - 1) will be put into the queue
          */
         messageProcessingExecutor.setQueueCapacity(maxNumberOfMessages - 1);
-        messageProcessingExecutor.setAwaitTerminationSeconds((int) awaitShutDown.getSeconds());
-        if (awaitShutDown.getSeconds() > 0) {
-            Runtime.getRuntime().addShutdownHook(new Thread(messageProcessingExecutor::shutdown));
-        }
         messageProcessingExecutor.afterPropertiesSet();
 
         messagesInProcessing = new SetWithUpperBound<>(numberOfThreads);
@@ -179,4 +179,15 @@ public class LongRunningMessageHandler<I, O> {
     SetWithUpperBound<String> getMessagesInProcessing() {
         return messagesInProcessing;
     }
+
+    public void shutdown() {
+        messageProcessingExecutor.getThreadPoolExecutor().shutdown();
+        try {
+            messageProcessingExecutor.getThreadPoolExecutor().awaitTermination(awaitShutDown.getSeconds(), TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            log.warn("wait for termination failure after "+awaitShutDown+", call shutdownNow", e);
+            messageProcessingExecutor.getThreadPoolExecutor().shutdownNow();
+        }
+    }
+
 }
