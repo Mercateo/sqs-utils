@@ -81,7 +81,7 @@ public class LongRunningMessageHandler<I, O> {
         messageProcessingExecutor = new ThreadPoolTaskExecutor();
         messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
         messageProcessingExecutor.setCorePoolSize(numberOfThreads);
-        messageProcessingExecutor.setThreadNamePrefix(getClass().getSimpleName()+"-");
+        messageProcessingExecutor.setThreadNamePrefix(getClass().getSimpleName()+"-"+queue.getName().getId()+"-");
         /*
          * Since we only accept new messages if one slot in the messagesInProcessing-Set
          * / executor is free we can schedule at least one message for instant execution
