@@ -1,3 +1,7 @@
+# 0.5.0
+
+* adds the possibility to configure the error handling of the framework even more. Additionaly to exceptions thrown by the worker, you can now define error handling routines for "extend timeout" and "acknowledge message" errors. Exception handling for users that don't already define their own `ErrorHandlingStrategy` stays the same.
+
 # 0.4.0
 
 * shutdown in `LongRunningMessageHandler` and `LongRunningMessageHandlerFactory` must be explicitely called

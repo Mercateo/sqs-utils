@@ -255,7 +255,7 @@ public class LongRunningMessageHandlerFactory {
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull Duration timeUntilVisibilityTimeoutExtension,
             @NonNull Duration awaitShutDown) {
-        ErrorHandlingStrategy<I> errorHandlingStrategy = new LogAndRethrowStrategy<I>();
+        ErrorHandlingStrategy<I> errorHandlingStrategy = new DefaultErrorHandlingStrategy<I>();
         return this.get(numberOfThreads,
                 worker,
                 queueName,
@@ -297,7 +297,7 @@ public class LongRunningMessageHandlerFactory {
      *            the output type of the message processing
      * 
      * @param errorHandlingStrategy
-     *            defines how the exceptions that are thrown by workers are
+     *            defines how the exceptions that are inside the framework are
      *            handled, logged and propagated within the framework.
      * @return a LongRunningMessageHandler instance
      */

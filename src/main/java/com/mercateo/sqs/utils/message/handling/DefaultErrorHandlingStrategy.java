@@ -15,20 +15,39 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import com.amazonaws.AmazonServiceException;
+
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.Message;
 
 @Slf4j
-class LogAndRethrowStrategy<I> implements ErrorHandlingStrategy<I> {
+class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
 
     @Override
     @SneakyThrows
-    public void handle(Exception e, Message<I> message) {
+    public void handleWorkerException(Exception e, Message<I> message) {
         String messageId = message.getHeaders().get("MessageId", String.class);
         log.error("error while handling message " + messageId + ": " + message.getPayload(), e);
         throw e;
+    }
+
+    @Override
+    public void handleExtendVisibilityTimeoutException(AmazonServiceException e,
+            Message<?> message) {
+
+        String msg = "error while extending message visibility for " + message.getHeaders().get("MessageId",
+                String.class);
+        log.error(msg, e);
+        throw e;
+
+    }
+
+    @Override
+    public void handleAcknowledgeMessageException(AmazonServiceException e, Message<I> message) {
+        String messageId = message.getHeaders().get("MessageId", String.class);
+        log.error("could not acknowledge " + messageId, e);
     }
 
 }
