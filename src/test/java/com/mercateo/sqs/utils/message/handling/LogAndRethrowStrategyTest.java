@@ -20,12 +20,12 @@ public class LogAndRethrowStrategyTest {
     @Mock
     private Acknowledgment acknowledgment;
 
-    private LogAndRethrowStrategy<Integer> uut;
+    private DefaultErrorHandlingStrategy<Integer> uut;
 
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
-        uut = new LogAndRethrowStrategy<>();
+        uut = new DefaultErrorHandlingStrategy<>();
     }
 
     @Test
@@ -35,7 +35,7 @@ public class LogAndRethrowStrategyTest {
         Message<Integer> message = createMessage();
 
         // When
-        Throwable throwable = catchThrowable(() -> uut.handle(e, message));
+        Throwable throwable = catchThrowable(() -> uut.handleWorkerException(e, message));
 
         // Then
         assertThat(throwable).isInstanceOf(IllegalArgumentException.class);

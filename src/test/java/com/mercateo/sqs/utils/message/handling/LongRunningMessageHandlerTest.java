@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.testing.NullPointerTester.Visibility;
 import com.mercateo.sqs.utils.queue.Queue;
+import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 import java.time.Duration;
@@ -53,6 +54,7 @@ public class LongRunningMessageHandlerTest {
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
+        when(queue.getName()).thenReturn(new QueueName("queuename"));
         when(queue.getDefaultVisibilityTimeout()).thenReturn(Duration.ofSeconds(120));
         uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 1, 1,
                 messageHandlingRunnableFactory, timeoutExtenderFactory, worker, queue,
@@ -66,7 +68,7 @@ public class LongRunningMessageHandlerTest {
         nullPointerTester.setDefault(VisibilityTimeoutExtenderFactory.class,
                 timeoutExtenderFactory);
         nullPointerTester.setDefault(Queue.class, queue);
-
+        
         // when
         nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
         nullPointerTester.testConstructors(uut.getClass(), Visibility.PACKAGE);

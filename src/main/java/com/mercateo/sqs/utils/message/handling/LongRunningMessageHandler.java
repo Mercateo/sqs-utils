@@ -165,7 +165,7 @@ public class LongRunningMessageHandler<I, O> {
     }
 
     private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull Message<I> message) {
-        VisibilityTimeoutExtender timeoutExtender = timeoutExtenderFactory.get(message, queue);
+        VisibilityTimeoutExtender timeoutExtender = timeoutExtenderFactory.get(message, queue, errorHandlingStrategy);
         return timeoutExtensionExecutor.scheduleAtFixedRate(timeoutExtender,
                 timeUntilVisibilityTimeoutExtension.toMillis(), timeUntilVisibilityTimeoutExtension
                         .toMillis(), TimeUnit.MILLISECONDS);

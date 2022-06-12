@@ -15,6 +15,8 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import com.amazonaws.AmazonServiceException;
+
 import io.awspring.cloud.messaging.listener.Acknowledgment;
 
 import java.util.concurrent.ScheduledFuture;
@@ -71,7 +73,7 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
         } catch (InterruptedException e) {
             log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
-            errorHandlingStrategy.handle(e, message);
+            errorHandlingStrategy.handleWorkerException(e, message);
             acknowledge(messageId, acknowledgment);
         } finally {
             visibilityTimeoutExtender.cancel(false);
@@ -81,9 +83,13 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
     private void acknowledge(String messageId, Acknowledgment acknowledgment) {
         try {
-            acknowledgment.acknowledge().get();
+            try {
+                acknowledgment.acknowledge().get();
+            } catch (AmazonServiceException e) {
+                errorHandlingStrategy.handleAcknowledgeMessageException(e, message);
+            }
         } catch (Exception e) {
-            log.error("could not acknowledge " + messageId, e);
+            log.error("failure during acknowledge " + messageId, e);
         }
     }
 }

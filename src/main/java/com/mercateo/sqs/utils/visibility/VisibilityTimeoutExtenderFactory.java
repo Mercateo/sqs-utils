@@ -16,6 +16,7 @@
 package com.mercateo.sqs.utils.visibility;
 
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
 import com.mercateo.sqs.utils.queue.Queue;
 
 import java.time.Duration;
@@ -37,11 +38,12 @@ public class VisibilityTimeoutExtenderFactory {
         this.sqsClient = amazonSQS;
     }
 
-    public VisibilityTimeoutExtender get(@NonNull Message<?> message, @NonNull Queue queue) {
+    public VisibilityTimeoutExtender get(@NonNull Message<?> message, @NonNull Queue queue,
+            @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy) {
 
         Duration defaultVisibilityTimeout = queue.getDefaultVisibilityTimeout();
 
         return new VisibilityTimeoutExtender(sqsClient, defaultVisibilityTimeout, message, queue
-                .getUrl());
+                .getUrl(), errorHandlingStrategy);
     }
 }

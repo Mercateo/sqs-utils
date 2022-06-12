@@ -25,7 +25,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 @SuppressWarnings("boxing")
-public class MessageHandlingRunnableTest {
+class MessageHandlingRunnableTest {
 
     @Mock
     private MessageWorkerWithHeaders<Integer, String> worker;
@@ -61,7 +61,7 @@ public class MessageHandlingRunnableTest {
     }
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts() throws Exception {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
 
@@ -72,7 +72,7 @@ public class MessageHandlingRunnableTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testRun() throws Throwable {
+    void testRun() throws Throwable {
         // given
         when(worker.work(3, message.getHeaders())).thenReturn("3S");
         when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
@@ -88,11 +88,11 @@ public class MessageHandlingRunnableTest {
     }
 
     @Test
-    public void testRun_throws_workerException_and_does_not_ack() throws Throwable {
+    void testRun_throws_workerException_and_does_not_ack() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
-        doThrow(e).when(errorHandlingStrategy).handle(e, message);
+        doThrow(e).when(errorHandlingStrategy).handleWorkerException(e, message);
 
         // when
         Throwable result = catchThrowable(() -> uut.run());
@@ -101,14 +101,14 @@ public class MessageHandlingRunnableTest {
         verifyNoInteractions(finishedMessageCallback);
         verifyNoInteractions(acknowledgment);
         assertThat(result).isEqualTo(e);
-        verify(errorHandlingStrategy).handle(e, message);
+        verify(errorHandlingStrategy).handleWorkerException(e, message);
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testRun_throws_workerException_and_acks() throws Throwable {
+    void testRun_throws_workerException_and_acks() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
@@ -118,7 +118,7 @@ public class MessageHandlingRunnableTest {
         uut.run();
 
         // then
-        verify(errorHandlingStrategy).handle(e, message);
+        verify(errorHandlingStrategy).handleWorkerException(e, message);
         verify(acknowledgment).acknowledge();
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove("mid");

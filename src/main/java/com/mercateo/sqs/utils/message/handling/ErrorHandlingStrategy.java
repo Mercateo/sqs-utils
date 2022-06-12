@@ -15,6 +15,8 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import com.amazonaws.AmazonServiceException;
+
 import org.springframework.messaging.Message;
 
 public interface ErrorHandlingStrategy<I> {
@@ -28,6 +30,30 @@ public interface ErrorHandlingStrategy<I> {
      * @param message
      *            that was incorrectly processed
      */
-    void handle(Exception e, Message<I> message);
+    void handleWorkerException(Exception e, Message<I> message);
+    
+    /**
+     * Defines how exceptions, that are thrown by the timeout extension are handled.
+     * A possible reason for this can be that the max timeout of 12 hours is reached. 
+     * Throwing an exception will stop any furthers tries to extend the timeout.
+     * 
+     * @param e the exception thrown by the aws call
+     * @param  message that was tried to extend
+     */
+    
+    void handleExtendVisibilityTimeoutException(AmazonServiceException e, Message<?> message);
+    
+    /**
+     * Defines how exceptions, that are thrown by the message acknowledgement are handled.
+     * A possible reason for this can be an invalid receipt handle or an already deleted message. 
+     * Throwing an exception will be caught and logged as an error. Recommendation is not to throw an exception here.
+     * 
+     * @param e the exception thrown by the aws call
+     * @param message that was tried to extend
+     */
+    
+    void handleAcknowledgeMessageException(AmazonServiceException e, Message<I> message);
+
+
 
 }

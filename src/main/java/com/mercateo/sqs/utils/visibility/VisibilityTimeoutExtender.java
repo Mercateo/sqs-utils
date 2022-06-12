@@ -15,8 +15,10 @@
  */
 package com.mercateo.sqs.utils.visibility;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
+import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
 
 import java.time.Duration;
 
@@ -33,11 +35,15 @@ public class VisibilityTimeoutExtender implements Runnable {
     private final ChangeMessageVisibilityRequest request;
 
     private final Message<?> message;
+    
+    private final ErrorHandlingStrategy<?> errorHandlingStrategy;
+
 
     VisibilityTimeoutExtender(@NonNull AmazonSQS sqsClient, @NonNull Duration newVisibilityTimeout,
-            @NonNull Message<?> message, @NonNull String queueUrl) {
+            @NonNull Message<?> message, @NonNull String queueUrl, @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy) {
         this.sqsClient = sqsClient;
         this.message = message;
+        this.errorHandlingStrategy=errorHandlingStrategy;
 
         request = new ChangeMessageVisibilityRequest().withQueueUrl(queueUrl).withReceiptHandle(
                 message.getHeaders().get("ReceiptHandle", String.class)).withVisibilityTimeout(
@@ -53,9 +59,12 @@ public class VisibilityTimeoutExtender implements Runnable {
         try {
             log.trace("changing message visibility: " + request);
             sqsClient.changeMessageVisibility(request);
+        } catch (AmazonServiceException e) {
+            errorHandlingStrategy.handleExtendVisibilityTimeoutException(e, message);
         } catch (Exception e) {
-            log.error("error while extending message visibility for " + message.getHeaders().get("MessageId", String.class), e);
-            throw new RuntimeException(e);
+            log.error("error while extending message visibility for " + message.getHeaders().get("MessageId",
+                    String.class), e);
+            throw e;
         }
     }
 }
