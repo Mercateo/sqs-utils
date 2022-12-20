@@ -25,6 +25,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.Message;
@@ -180,13 +181,13 @@ public class LongRunningMessageHandler<I, O> {
         return messagesInProcessing;
     }
 
+    @SneakyThrows
     public void shutdown() {
         messageProcessingExecutor.getThreadPoolExecutor().shutdown();
-        try {
-            messageProcessingExecutor.getThreadPoolExecutor().awaitTermination(awaitShutDown.getSeconds(), TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            log.warn("wait for termination failure after "+awaitShutDown+", call shutdownNow", e);
+        boolean successfullyTerminated = messageProcessingExecutor.getThreadPoolExecutor().awaitTermination(awaitShutDown.getSeconds(), TimeUnit.SECONDS);
+        if (!successfullyTerminated) {
             messageProcessingExecutor.getThreadPoolExecutor().shutdownNow();
+            messageProcessingExecutor.getThreadPoolExecutor().awaitTermination(10, TimeUnit.SECONDS);
         }
     }
 
