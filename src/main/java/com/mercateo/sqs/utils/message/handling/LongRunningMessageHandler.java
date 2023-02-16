@@ -56,6 +56,8 @@ public class LongRunningMessageHandler<I, O> {
 
     private final Duration awaitShutDown;
 
+    private final int numberOfThreads;
+
     LongRunningMessageHandler(@NonNull ScheduledExecutorService timeoutExtensionExecutor,
             int maxNumberOfMessages, int numberOfThreads,
             @NonNull MessageHandlingRunnableFactory messageHandlingRunnableFactory,
@@ -78,10 +80,11 @@ public class LongRunningMessageHandler<I, O> {
         this.timeUntilVisibilityTimeoutExtension = timeUntilVisibilityTimeoutExtension;
         this.awaitShutDown = awaitShutDown;
         this.errorHandlingStrategy = errorHandlingStrategy;
+        this.numberOfThreads = numberOfThreads;
 
         messageProcessingExecutor = new ThreadPoolTaskExecutor();
-        messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
         messageProcessingExecutor.setCorePoolSize(numberOfThreads);
+        messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
         messageProcessingExecutor.setThreadNamePrefix(getClass().getSimpleName()+"-"+queue.getName().getId()+"-");
         /*
          * Since we only accept new messages if one slot in the messagesInProcessing-Set
@@ -155,6 +158,21 @@ public class LongRunningMessageHandler<I, O> {
         }
 
         messagesInProcessing.waitUntilAtLeastOneFree();
+    }
+
+    /** 
+     * Returns the number of threads that are currently not busy working on messages.
+     * <p>
+     * The method is intended as a workaround for message visibility extension 
+     * and message acknowledge errors, but can only be applied, when you have
+     * control over the messages listener (i.e. not using the Spring one) and
+     * you can actually use it.
+     * See https://github.com/Mercateo/sqs-utils/issues/16 for details
+     * 
+     * @return Number of threads that are currently not processing messages
+     */
+    public int getFreeWorkerCapacity() {
+        return numberOfThreads - messagesInProcessing.size();
     }
 
     private void scheduleNewMessageTask(@NonNull Message<I> message,

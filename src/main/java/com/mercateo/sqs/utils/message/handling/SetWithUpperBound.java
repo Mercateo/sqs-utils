@@ -66,6 +66,10 @@ class SetWithUpperBound<T> {
         }
     }
 
+    int size() {
+        return backingSet.size();
+    }
+
     /**
      * Visible for Testing
      *
