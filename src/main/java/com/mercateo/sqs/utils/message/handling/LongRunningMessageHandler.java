@@ -172,7 +172,7 @@ public class LongRunningMessageHandler<I, O> {
      * @return Number of threads that are currently not processing messages
      */
     public int getFreeWorkerCapacity() {
-        return numberOfThreads - messagesInProcessing.size();
+        return messagesInProcessing.free();
     }
 
     private void scheduleNewMessageTask(@NonNull Message<I> message,
