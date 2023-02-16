@@ -56,8 +56,6 @@ public class LongRunningMessageHandler<I, O> {
 
     private final Duration awaitShutDown;
 
-    private final int numberOfThreads;
-
     LongRunningMessageHandler(@NonNull ScheduledExecutorService timeoutExtensionExecutor,
             int maxNumberOfMessages, int numberOfThreads,
             @NonNull MessageHandlingRunnableFactory messageHandlingRunnableFactory,
@@ -80,7 +78,6 @@ public class LongRunningMessageHandler<I, O> {
         this.timeUntilVisibilityTimeoutExtension = timeUntilVisibilityTimeoutExtension;
         this.awaitShutDown = awaitShutDown;
         this.errorHandlingStrategy = errorHandlingStrategy;
-        this.numberOfThreads = numberOfThreads;
 
         messageProcessingExecutor = new ThreadPoolTaskExecutor();
         messageProcessingExecutor.setCorePoolSize(numberOfThreads);
