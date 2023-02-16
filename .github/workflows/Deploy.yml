@@ -19,7 +19,7 @@ jobs:
         server-username: SONATYPE_USERNAME
         server-password: SONATYPE_PASSWORD
         gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-    - run: mvn -B -U clean deploy
+    - run: mvn -B -U clean deploy -Dsign-artifacts
       env:
         SONATYPE_USERNAME: ${{ vars.SONATYPE_USERNAME }}
         SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
