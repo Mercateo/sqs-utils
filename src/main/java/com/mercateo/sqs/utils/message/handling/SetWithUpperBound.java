@@ -66,7 +66,9 @@ class SetWithUpperBound<T> {
         }
     }
 
-    int size() {
+    int free() {
+        return maximumSize - backingSet.size();
+    }
         return backingSet.size();
     }
 
