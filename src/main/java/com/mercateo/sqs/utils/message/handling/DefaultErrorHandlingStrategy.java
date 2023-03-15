@@ -34,6 +34,14 @@ class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
     }
 
     @Override
+    @SneakyThrows
+    public void handleWorkerThrowable(Throwable t, Message<I> message) {
+        String messageId = message.getHeaders().get("MessageId", String.class);
+        log.error("error while handling message " + messageId + ": " + message.getPayload(), t);
+        throw t;
+    }
+
+    @Override
     public void handleExtendVisibilityTimeoutException(AmazonServiceException e,
             Message<?> message) {
 

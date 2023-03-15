@@ -75,6 +75,9 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
         } catch (Exception e) {
             errorHandlingStrategy.handleWorkerException(e, message);
             acknowledge(messageId, acknowledgment);
+        } catch (Throwable t) {
+            errorHandlingStrategy.handleWorkerThrowable(t, message);
+            acknowledge(messageId, acknowledgment);
         } finally {
             visibilityTimeoutExtender.cancel(false);
             messages.remove(messageId);

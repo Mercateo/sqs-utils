@@ -1,3 +1,12 @@
+# 0.7.0
+
+* adds the possibility to configure a handling in case of a `Throwable` in `ErrorHandlingStrategy`
+
+# 0.6.0
+
+* Visibility timeout and acknowledge workaround
+* Fix deployment by explicitly activating artifact signing
+
 # 0.5.0
 
 * adds the possibility to configure the error handling of the framework even more. Additionaly to exceptions thrown by the worker, you can now define error handling routines for "extend timeout" and "acknowledge message" errors. Exception handling for users that don't already define their own `ErrorHandlingStrategy` stays the same.

@@ -33,6 +33,17 @@ public interface ErrorHandlingStrategy<I> {
     void handleWorkerException(Exception e, Message<I> message);
     
     /**
+     * Defines how a throwable, that is thrown by the worker are handled. If a
+     * message should not be acknowledged, then exception must be thrown.
+     *
+     * @param t
+     *            the throwable thrown by the worker
+     * @param message
+     *            that was incorrectly processed
+     */
+    void handleWorkerThrowable(Throwable t, Message<I> message);
+
+    /**
      * Defines how exceptions, that are thrown by the timeout extension are handled.
      * A possible reason for this can be that the max timeout of 12 hours is reached. 
      * Throwing an exception will stop any furthers tries to extend the timeout.
