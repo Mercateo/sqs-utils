@@ -205,5 +205,19 @@ public class LongRunningMessageHandler<I, O> {
             messageProcessingExecutor.getThreadPoolExecutor().awaitTermination(10, TimeUnit.SECONDS);
         }
     }
+    /**
+     * Returns the number of elements that the {@link #messageProcessingExecutor} can accept
+     * <p>
+     * This method should only be used in a single threaded environment, since it is possible that
+     * in a multi-threaded environment the number of free slots changes between the call to this method
+     *
+     * @return Remaining queue capacity
+     */
+    public int getRemainingCapacity() {
+        return messageProcessingExecutor
+                .getThreadPoolExecutor()
+                .getQueue()
+                .remainingCapacity();
+    }
 
 }
