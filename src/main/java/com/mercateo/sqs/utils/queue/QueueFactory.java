@@ -22,8 +22,8 @@ import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import lombok.NonNull;
 

@@ -1,5 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.mercateo.sqs.utils.message.handling.LongRunningMessageHandlerFactory,\
-  com.mercateo.sqs.utils.message.handling.MessageHandlingRunnableFactory,\
-  com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory,\
-  com.mercateo.sqs.utils.queue.QueueFactory

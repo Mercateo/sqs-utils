@@ -25,8 +25,8 @@ import com.mercateo.sqs.utils.queue.Queue;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import lombok.NonNull;
 
