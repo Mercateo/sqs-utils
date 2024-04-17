@@ -1,3 +1,7 @@
+# 0.8.0
+
+* pass MDC context to workers
+
 # 0.7.1
 
 * adds the possibility to configure a handling in case of a `Throwable` in `ErrorHandlingStrategy`
