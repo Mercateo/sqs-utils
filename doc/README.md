@@ -1,4 +1,5 @@
 # Release HowTo
+
 1. Merge your changes into the master branch
 1. Execute `mvn release:prepare`
     - prompts you for a tag, choose a SemVer conform tag that reflects the changes you made
@@ -13,3 +14,8 @@
 1. Wait for the Github action to deploy the artifact and for it to be available in Maven Central
     - you can usually directly access the artifact after 10 to 20 minutes, way before it shows up when searching on [Maven Central](https://search.maven.org/)
     - i.e. `https://search.maven.org/artifact/com.mercateo.sqs/sqs-utils/X.Y.Z/jar` where `X.Y.Z` is the version that you just released
+
+# deploy SNAPSHOT
+
+* tag a commit and push this tag
+* will be available here https://oss.sonatype.org/content/repositories/snapshots/com/mercateo/sqs/sqs-utils/
