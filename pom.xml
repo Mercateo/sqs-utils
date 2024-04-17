@@ -4,7 +4,7 @@
     <artifactId>sqs-utils</artifactId>
     <groupId>com.mercateo.sqs</groupId>
     <name>sqs-utils</name>
-    <version>0.8.1</version>
+    <version>0.8.2-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <description>Some utility classes for AWS SQS</description>
@@ -39,7 +39,7 @@
         <connection>scm:git:git@github.com:Mercateo/sqs-utils.git</connection>
         <developerConnection>scm:git:git@github.com:Mercateo/sqs-utils.git</developerConnection>
         <url>https://github.com/Mercateo/sqs-utils.git</url>
-        <tag>0.8.1</tag>
+        <tag>0.8.0</tag>
     </scm>
 
     <developers>
