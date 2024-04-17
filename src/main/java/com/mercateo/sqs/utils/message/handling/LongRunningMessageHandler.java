@@ -20,6 +20,8 @@ import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +30,7 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import org.slf4j.MDC;
 import org.springframework.messaging.Message;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -79,7 +82,16 @@ public class LongRunningMessageHandler<I, O> {
         this.awaitShutDown = awaitShutDown;
         this.errorHandlingStrategy = errorHandlingStrategy;
 
-        messageProcessingExecutor = new ThreadPoolTaskExecutor();
+        messageProcessingExecutor = new ThreadPoolTaskExecutor() {
+            @Override
+            public Future<?> submit(Runnable task) {
+                Map<String, String> current = MDC.getCopyOfContextMap();
+                return super.submit(() -> {
+                    MDC.setContextMap(current);
+                    task.run();
+                });
+            }
+        };
         messageProcessingExecutor.setCorePoolSize(numberOfThreads);
         messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
         messageProcessingExecutor.setThreadNamePrefix(getClass().getSimpleName()+"-"+queue.getName().getId()+"-");
