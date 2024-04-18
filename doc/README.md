@@ -12,8 +12,7 @@
     - creates another commit, which updates version to the next snapshot
     - commits everything to the Github repo
 1. Wait for the Github action to deploy the artifact and for it to be available in Maven Central
-    - you can usually directly access the artifact after 10 to 20 minutes, way before it shows up when searching on [Maven Central](https://search.maven.org/)
-    - i.e. `https://search.maven.org/artifact/com.mercateo.sqs/sqs-utils/X.Y.Z/jar` where `X.Y.Z` is the version that you just released
+    - the new version is available as soon as you find it in the maven repo: https://repo.maven.apache.org/maven2/com/mercateo/sqs/sqs-utils/
 
 # deploy SNAPSHOT
 
