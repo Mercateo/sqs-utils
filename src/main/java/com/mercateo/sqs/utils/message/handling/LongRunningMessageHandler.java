@@ -87,8 +87,16 @@ public class LongRunningMessageHandler<I, O> {
             public Future<?> submit(Runnable task) {
                 Map<String, String> current = MDC.getCopyOfContextMap();
                 return super.submit(() -> {
-                    MDC.setContextMap(current);
-                    task.run();
+                    try {
+                        if (current != null) {
+                            current.forEach(MDC::put);
+                        }
+                        task.run();
+                    } finally {
+                        if (current != null) {
+                            current.keySet().forEach(MDC::remove);
+                        }
+                    }
                 });
             }
         };
