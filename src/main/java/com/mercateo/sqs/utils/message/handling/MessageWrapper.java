@@ -2,11 +2,13 @@ package com.mercateo.sqs.utils.message.handling;
 
 import io.awspring.cloud.messaging.listener.Acknowledgment;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 
 import org.springframework.messaging.Message;
 
@@ -19,7 +21,9 @@ public class MessageWrapper<I> {
 
     private final AtomicBoolean acknowledged = new AtomicBoolean(false);
 
-    public void acknowledge() {
+    @SneakyThrows
+    public void acknowledge()  {
+        getAcknowledgment().acknowledge().get(2, TimeUnit.MINUTES);
         acknowledged.set(true);
     }
 
