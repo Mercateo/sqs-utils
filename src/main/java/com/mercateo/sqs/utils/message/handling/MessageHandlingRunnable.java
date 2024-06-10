@@ -18,6 +18,7 @@ import com.amazonaws.AmazonServiceException;
 
 import java.util.concurrent.ScheduledFuture;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,16 +28,22 @@ import org.springframework.messaging.MessageHeaders;
 @RequiredArgsConstructor
 public class MessageHandlingRunnable<I, O> implements Runnable {
 
+    @NonNull
     private final MessageWorkerWithHeaders<I, O> worker;
 
+    @NonNull
     private final MessageWrapper<I> messageWrapper;
 
+    @NonNull
     private final FinishedMessageCallback<I, O> finishedMessageCallback;
 
+    @NonNull
     private final SetWithUpperBound<String> messages;
 
+    @NonNull
     private final ScheduledFuture<?> visibilityTimeoutExtender;
 
+    @NonNull
     private final ErrorHandlingStrategy<I> errorHandlingStrategy;
 
     @Override
