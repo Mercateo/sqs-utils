@@ -1,5 +1,9 @@
 package com.mercateo.sqs.utils.message.handling;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
+import com.amazonaws.services.sqs.model.ChangeMessageVisibilityResult;
+
 import io.awspring.cloud.messaging.listener.Acknowledgment;
 
 import java.util.concurrent.TimeUnit;
@@ -21,16 +25,6 @@ public class MessageWrapper<I> {
 
     private final AtomicBoolean acknowledged = new AtomicBoolean(false);
 
-    @SneakyThrows
-    public void acknowledge()  {
-        getAcknowledgment().acknowledge().get(2, TimeUnit.MINUTES);
-        acknowledged.set(true);
-    }
-
-    public boolean isAcknowledged() {
-        return acknowledged.get();
-    }
-
     public String getMessageId() {
         return message.getHeaders().get("MessageId", String.class);
     }
@@ -39,8 +33,20 @@ public class MessageWrapper<I> {
         return message.getHeaders().get("ReceiptHandle", String.class);
     }
 
-    public Acknowledgment getAcknowledgment() {
-        return message.getHeaders().get("Acknowledgment", Acknowledgment.class);
+    @SneakyThrows
+    public synchronized void acknowledge() {
+        Acknowledgment acknowledgment = message.getHeaders().get("Acknowledgment", Acknowledgment.class);
+        if (acknowledgment == null) {
+            throw new NullPointerException("there is no \"Acknowledgment\" in the message headers");
+        }
+        acknowledgment.acknowledge().get(2, TimeUnit.MINUTES);
+        acknowledged.set(true);
     }
 
+    public synchronized ChangeMessageVisibilityResult changeMessageVisibility(AmazonSQS sqsClient, ChangeMessageVisibilityRequest request) {
+        if (acknowledged.get()) {
+            throw new AlreadyAcknowledgedException();
+        }
+        return sqsClient.changeMessageVisibility(request);
+    }
 }

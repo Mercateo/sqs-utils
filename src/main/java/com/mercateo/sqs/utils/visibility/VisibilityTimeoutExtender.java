@@ -21,6 +21,7 @@ import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityResult;
 import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
+import com.mercateo.sqs.utils.message.handling.AlreadyAcknowledgedException;
 import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
 import com.mercateo.sqs.utils.message.handling.MessageWrapper;
 
@@ -69,9 +70,9 @@ public class VisibilityTimeoutExtender implements Runnable {
     @Override
     public void run() {
         try {
-            retryer.call(() -> sqsClient.changeMessageVisibility(request));
+            retryer.call(() -> messageWrapper.changeMessageVisibility(sqsClient, request));
         } catch (Exception e) {
-            if (messageWrapper.isAcknowledged()) {
+            if (e.getCause() instanceof AlreadyAcknowledgedException) {
                 return;
             }
             if (e.getCause() instanceof AmazonServiceException) {
