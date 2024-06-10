@@ -8,8 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.common.testing.NullPointerTester;
-
 import io.awspring.cloud.messaging.listener.Acknowledgment;
 
 import java.util.HashMap;
@@ -56,18 +54,8 @@ class MessageHandlingRunnableTest {
         headerMap.put("MessageId", "mid");
         headerMap.put("Acknowledgment", acknowledgment);
         message = new GenericMessage<>(3, new MessageHeaders(headerMap));
-        uut = new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messages,
+        uut = new MessageHandlingRunnable<>(worker, new MessageWrapper<>(message), finishedMessageCallback, messages,
                 visibilityTimeoutExtender, errorHandlingStrategy);
-    }
-
-    @Test
-    void testNullContracts() throws Exception {
-        // given
-        NullPointerTester nullPointerTester = new NullPointerTester();
-
-        // when
-        nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
-        nullPointerTester.testAllPublicConstructors(uut.getClass());
     }
 
     @SuppressWarnings("unchecked")

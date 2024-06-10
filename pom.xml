@@ -123,6 +123,7 @@
             <version>4.2.0</version>
             <scope>test</scope>
         </dependency>
+        <!-- remove ? -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava-testlib</artifactId>

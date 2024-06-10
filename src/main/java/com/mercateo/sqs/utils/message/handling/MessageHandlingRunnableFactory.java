@@ -21,19 +21,17 @@ import javax.inject.Named;
 
 import lombok.NonNull;
 
-import org.springframework.messaging.Message;
-
 @Named
 public class MessageHandlingRunnableFactory {
 
     <I, O> MessageHandlingRunnable<I, O> get(@NonNull MessageWorkerWithHeaders<I, O> worker,
-            @NonNull Message<I> message,
+            @NonNull MessageWrapper<I> messageWrapper,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull SetWithUpperBound<String> messageSet,
             @NonNull ScheduledFuture<?> visibilityTimeoutExtender,
             @NonNull ErrorHandlingStrategy<I> errorHandlingStrategy) {
 
-        return new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messageSet,
+        return new MessageHandlingRunnable<>(worker, messageWrapper, finishedMessageCallback, messageSet,
                 visibilityTimeoutExtender, errorHandlingStrategy);
     }
 }

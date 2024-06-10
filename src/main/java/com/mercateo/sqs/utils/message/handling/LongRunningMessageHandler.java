@@ -16,7 +16,6 @@
 package com.mercateo.sqs.utils.message.handling;
 
 import com.mercateo.sqs.utils.queue.Queue;
-import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 import java.time.Duration;
@@ -150,7 +149,8 @@ public class LongRunningMessageHandler<I, O> {
      *            the message to be processed
      */
     public void handleMessage(@NonNull Message<I> message) {
-        String messageId = message.getHeaders().get("MessageId", String.class);
+        MessageWrapper<I> messageWrapper = new MessageWrapper<>(message);
+        String messageId = messageWrapper.getMessageId();
         if (messagesInProcessing.contains(messageId)) {
             return;
         }
@@ -158,7 +158,7 @@ public class LongRunningMessageHandler<I, O> {
 
         ScheduledFuture<?> timeoutExtender;
         try {
-            timeoutExtender = scheduleNewVisibilityTimeoutExtender(message);
+            timeoutExtender = scheduleNewVisibilityTimeoutExtender(messageWrapper);
         } catch (RuntimeException rex) {
             messagesInProcessing.remove(messageId);
             log.error("error while trying to schedule timeout extender", rex);
@@ -166,7 +166,7 @@ public class LongRunningMessageHandler<I, O> {
         }
 
         try {
-            scheduleNewMessageTask(message, timeoutExtender);
+            scheduleNewMessageTask(messageWrapper, timeoutExtender);
         } catch (RuntimeException rex) {
             messagesInProcessing.remove(messageId);
             timeoutExtender.cancel(true);
@@ -192,19 +192,20 @@ public class LongRunningMessageHandler<I, O> {
         return messagesInProcessing.free();
     }
 
-    private void scheduleNewMessageTask(@NonNull Message<I> message,
+    private void scheduleNewMessageTask(@NonNull MessageWrapper<I> messageWrapper,
             ScheduledFuture<?> visibilityTimeoutExtender) {
         MessageHandlingRunnable<I, O> messageTask = messageHandlingRunnableFactory.get(worker,
-                message, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender, errorHandlingStrategy);
+                messageWrapper, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender, errorHandlingStrategy);
 
         messageProcessingExecutor.submit(messageTask);
     }
 
-    private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull Message<I> message) {
-        VisibilityTimeoutExtender timeoutExtender = timeoutExtenderFactory.get(message, queue, errorHandlingStrategy);
-        return timeoutExtensionExecutor.scheduleAtFixedRate(timeoutExtender,
-                timeUntilVisibilityTimeoutExtension.toMillis(), timeUntilVisibilityTimeoutExtension
-                        .toMillis(), TimeUnit.MILLISECONDS);
+    private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull MessageWrapper<I> messageWrapper) {
+        return timeoutExtensionExecutor.scheduleAtFixedRate(
+                timeoutExtenderFactory.get(messageWrapper, queue, errorHandlingStrategy),
+                timeUntilVisibilityTimeoutExtension.toMillis(),
+                timeUntilVisibilityTimeoutExtension.toMillis(),
+                TimeUnit.MILLISECONDS);
     }
 
     /**

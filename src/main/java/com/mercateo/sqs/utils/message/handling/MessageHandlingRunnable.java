@@ -21,17 +21,18 @@ import io.awspring.cloud.messaging.listener.Acknowledgment;
 
 import java.util.concurrent.ScheduledFuture;
 
-import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 
 @Slf4j
+@RequiredArgsConstructor
 public class MessageHandlingRunnable<I, O> implements Runnable {
 
     private final MessageWorkerWithHeaders<I, O> worker;
 
-    private final Message<I> message;
+    private final MessageWrapper<I> messageWrapper;
 
     private final FinishedMessageCallback<I, O> finishedMessageCallback;
 
@@ -41,58 +42,44 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
     private final ErrorHandlingStrategy<I> errorHandlingStrategy;
 
-    MessageHandlingRunnable(@NonNull MessageWorkerWithHeaders<I, O> worker,
-            @NonNull Message<I> message,
-            @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
-            @NonNull SetWithUpperBound<String> messages,
-            @NonNull ScheduledFuture<?> visibilityTimeoutExtender,
-            @NonNull ErrorHandlingStrategy<I> errorHandlingStrategy) {
-
-        this.worker = worker;
-        this.message = message;
-        this.finishedMessageCallback = finishedMessageCallback;
-        this.messages = messages;
-        this.visibilityTimeoutExtender = visibilityTimeoutExtender;
-        this.errorHandlingStrategy = errorHandlingStrategy;
-
-    }
-
     @Override
     public void run() {
-        String messageId = message.getHeaders().get("MessageId", String.class);
-        Acknowledgment acknowledgment = message.getHeaders().get("Acknowledgment",
-                Acknowledgment.class);
+        String messageId = messageWrapper.getMessageId();
         try {
             log.info("starting processing of message " + messageId);
 
-            O outcome = worker.work(message.getPayload(), message.getHeaders());
+            I payload = messageWrapper.getMessage().getPayload();
+            MessageHeaders headers = messageWrapper.getMessage().getHeaders();
+            O outcome = worker.work(payload, headers);
 
-            finishedMessageCallback.call(message.getPayload(), outcome);
-            acknowledge(messageId, acknowledgment);
-            log.info("message task successfully processed and message acknowledged: " + messageId);
+            finishedMessageCallback.call(payload, outcome);
+            acknowledge(messageWrapper);
+            log.info("message task successfully processed and message acknowledged: " + messageId); //
         } catch (InterruptedException e) {
             log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
-            errorHandlingStrategy.handleWorkerException(e, message);
-            acknowledge(messageId, acknowledgment);
+            errorHandlingStrategy.handleWorkerException(e, messageWrapper.getMessage());
+            acknowledge(messageWrapper);
         } catch (Throwable t) {
-            errorHandlingStrategy.handleWorkerThrowable(t, message);
-            acknowledge(messageId, acknowledgment);
+            errorHandlingStrategy.handleWorkerThrowable(t, messageWrapper.getMessage());
+            acknowledge(messageWrapper);
         } finally {
             visibilityTimeoutExtender.cancel(false);
             messages.remove(messageId);
         }
     }
 
-    private void acknowledge(String messageId, Acknowledgment acknowledgment) {
+    private void acknowledge(MessageWrapper<I> messageWrapper) {
+        Acknowledgment acknowledgment = messageWrapper.getAcknowledgment();
         try {
             try {
                 acknowledgment.acknowledge().get();
+                messageWrapper.acknowledge();
             } catch (AmazonServiceException e) {
-                errorHandlingStrategy.handleAcknowledgeMessageException(e, message);
+                errorHandlingStrategy.handleAcknowledgeMessageException(e, messageWrapper.getMessage());
             }
         } catch (Exception e) {
-            log.error("failure during acknowledge " + messageId, e);
+            log.error("failure during acknowledge " + messageWrapper.getMessageId(), e);
         }
     }
 }
