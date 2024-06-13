@@ -11,7 +11,7 @@
     - tags the new commit
     - creates another commit, which updates version to the next snapshot
     - commits everything to the Github repo
-1. Wait for the Github action to deploy the artifact and for it to be available in Maven Central
+1. Wait for the [Github action](https://github.com/Mercateo/sqs-utils/actions/workflows/Deploy.yml) to deploy the artifact and for it to be available in Maven Central
     - the new version is available as soon as you find it in the maven repo: https://repo.maven.apache.org/maven2/com/mercateo/sqs/sqs-utils/
 
 # deploy SNAPSHOT
