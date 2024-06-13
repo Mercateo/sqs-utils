@@ -1,12 +1,12 @@
 /**
  * Copyright © 2017 Mercateo AG (http://www.mercateo.com)
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,18 +18,16 @@ package com.mercateo.sqs.utils.visibility;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
-import com.amazonaws.services.sqs.model.ChangeMessageVisibilityResult;
 import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
+import com.mercateo.sqs.utils.message.handling.MessageWrapper;
 
 import java.net.UnknownHostException;
 import java.time.Duration;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.messaging.Message;
 
 @Slf4j
 public class VisibilityTimeoutExtender implements Runnable {
@@ -38,29 +36,29 @@ public class VisibilityTimeoutExtender implements Runnable {
 
     private final ChangeMessageVisibilityRequest request;
 
-    private final Message<?> message;
+    private final MessageWrapper<?> messageWrapper;
 
     private final ErrorHandlingStrategy<?> errorHandlingStrategy;
 
-    private final Retryer<ChangeMessageVisibilityResult> retryer;
+    private final Retryer<Void> retryer;
 
     VisibilityTimeoutExtender(@NonNull AmazonSQS sqsClient, @NonNull Duration newVisibilityTimeout,
-            @NonNull Message<?> message, @NonNull String queueUrl,
-            @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy,
-            @NonNull RetryStrategy retryStrategy) {
+                              @NonNull MessageWrapper<?> messageWrapper, @NonNull String queueUrl,
+                              @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy,
+                              @NonNull RetryStrategy retryStrategy) {
         this.sqsClient = sqsClient;
-        this.message = message;
+        this.messageWrapper = messageWrapper;
         this.errorHandlingStrategy = errorHandlingStrategy;
         this.retryer = RetryerBuilder
-                .<ChangeMessageVisibilityResult> newBuilder()
+                .<Void>newBuilder()
                 .retryIfException(t -> (t.getCause() instanceof UnknownHostException))
                 .withWaitStrategy(retryStrategy.getRetryWaitStrategy())
                 .withStopStrategy(retryStrategy.getRetryStopStrategy())
                 .build();
 
         request = new ChangeMessageVisibilityRequest().withQueueUrl(queueUrl).withReceiptHandle(
-                message.getHeaders().get("ReceiptHandle", String.class)).withVisibilityTimeout(
-                        timeoutInSeconds(newVisibilityTimeout));
+                messageWrapper.getReceiptHandle()).withVisibilityTimeout(
+                timeoutInSeconds(newVisibilityTimeout));
     }
 
     private Integer timeoutInSeconds(Duration timeout) {
@@ -70,14 +68,17 @@ public class VisibilityTimeoutExtender implements Runnable {
     @Override
     public void run() {
         try {
-            log.trace("changing message visibility: " + request);
-            retryer.call(() -> sqsClient.changeMessageVisibility(request));
-        } catch (AmazonServiceException e) {
-            errorHandlingStrategy.handleExtendVisibilityTimeoutException(e, message);
+            retryer.call(() -> {
+                messageWrapper.changeMessageVisibility(sqsClient, request);
+                return null;
+            });
         } catch (Exception e) {
-            log.error("error while extending message visibility for " + message.getHeaders().get("MessageId",
-                    String.class), e);
-            throw new RuntimeException(e);
+            if (e.getCause() instanceof AmazonServiceException) {
+                errorHandlingStrategy.handleExtendVisibilityTimeoutException((AmazonServiceException) e.getCause(), messageWrapper.getMessage());
+            } else {
+                log.error("error while extending message visibility for " + messageWrapper.getMessageId(), e);
+                throw new RuntimeException(e);
+            }
         }
     }
 }

@@ -19,6 +19,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
 import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
+import com.mercateo.sqs.utils.message.handling.MessageWrapper;
 import com.mercateo.sqs.utils.queue.Queue;
 
 import java.time.Duration;
@@ -28,8 +29,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import lombok.NonNull;
-
-import org.springframework.messaging.Message;
 
 @Named
 public class VisibilityTimeoutExtenderFactory {
@@ -41,12 +40,11 @@ public class VisibilityTimeoutExtenderFactory {
         this.sqsClient = amazonSQS;
     }
 
-    public VisibilityTimeoutExtender get(@NonNull Message<?> message, @NonNull Queue queue,
-            @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy) {
+    public VisibilityTimeoutExtender get(@NonNull MessageWrapper messageWrapper, @NonNull Queue queue, @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy) {
 
         Duration defaultVisibilityTimeout = queue.getDefaultVisibilityTimeout();
 
-        return new VisibilityTimeoutExtender(sqsClient, defaultVisibilityTimeout, message, queue
+        return new VisibilityTimeoutExtender(sqsClient, defaultVisibilityTimeout, messageWrapper, queue
                 .getUrl(), errorHandlingStrategy,
                 new RetryStrategy(WaitStrategies.fixedWait(1000, TimeUnit.MILLISECONDS),
                         StopStrategies.stopAfterAttempt(5)));
