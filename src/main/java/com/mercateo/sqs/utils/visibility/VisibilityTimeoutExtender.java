@@ -1,12 +1,12 @@
 /**
  * Copyright © 2017 Mercateo AG (http://www.mercateo.com)
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,10 +18,8 @@ package com.mercateo.sqs.utils.visibility;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
-import com.amazonaws.services.sqs.model.ChangeMessageVisibilityResult;
 import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
-import com.mercateo.sqs.utils.message.handling.AlreadyAcknowledgedException;
 import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
 import com.mercateo.sqs.utils.message.handling.MessageWrapper;
 
@@ -42,7 +40,7 @@ public class VisibilityTimeoutExtender implements Runnable {
 
     private final ErrorHandlingStrategy<?> errorHandlingStrategy;
 
-    private final Retryer<ChangeMessageVisibilityResult> retryer;
+    private final Retryer<Void> retryer;
 
     VisibilityTimeoutExtender(@NonNull AmazonSQS sqsClient, @NonNull Duration newVisibilityTimeout,
                               @NonNull MessageWrapper<?> messageWrapper, @NonNull String queueUrl,
@@ -52,7 +50,7 @@ public class VisibilityTimeoutExtender implements Runnable {
         this.messageWrapper = messageWrapper;
         this.errorHandlingStrategy = errorHandlingStrategy;
         this.retryer = RetryerBuilder
-                .<ChangeMessageVisibilityResult> newBuilder()
+                .<Void>newBuilder()
                 .retryIfException(t -> (t.getCause() instanceof UnknownHostException))
                 .withWaitStrategy(retryStrategy.getRetryWaitStrategy())
                 .withStopStrategy(retryStrategy.getRetryStopStrategy())
@@ -60,7 +58,7 @@ public class VisibilityTimeoutExtender implements Runnable {
 
         request = new ChangeMessageVisibilityRequest().withQueueUrl(queueUrl).withReceiptHandle(
                 messageWrapper.getReceiptHandle()).withVisibilityTimeout(
-                        timeoutInSeconds(newVisibilityTimeout));
+                timeoutInSeconds(newVisibilityTimeout));
     }
 
     private Integer timeoutInSeconds(Duration timeout) {
@@ -70,11 +68,11 @@ public class VisibilityTimeoutExtender implements Runnable {
     @Override
     public void run() {
         try {
-            retryer.call(() -> messageWrapper.changeMessageVisibility(sqsClient, request));
+            retryer.call(() -> {
+                messageWrapper.changeMessageVisibility(sqsClient, request);
+                return null;
+            });
         } catch (Exception e) {
-            if (e.getCause() instanceof AlreadyAcknowledgedException) {
-                return;
-            }
             if (e.getCause() instanceof AmazonServiceException) {
                 errorHandlingStrategy.handleExtendVisibilityTimeoutException((AmazonServiceException) e.getCause(), messageWrapper.getMessage());
             } else {

@@ -2,7 +2,6 @@ package com.mercateo.sqs.utils.message.handling;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
-import com.amazonaws.services.sqs.model.ChangeMessageVisibilityResult;
 
 import io.awspring.cloud.messaging.listener.Acknowledgment;
 
@@ -43,10 +42,10 @@ public class MessageWrapper<I> {
         acknowledged.set(true);
     }
 
-    public synchronized ChangeMessageVisibilityResult changeMessageVisibility(AmazonSQS sqsClient, ChangeMessageVisibilityRequest request) {
+    public synchronized void changeMessageVisibility(AmazonSQS sqsClient, ChangeMessageVisibilityRequest request) {
         if (acknowledged.get()) {
-            throw new AlreadyAcknowledgedException();
+            return;
         }
-        return sqsClient.changeMessageVisibility(request);
+        sqsClient.changeMessageVisibility(request);
     }
 }
