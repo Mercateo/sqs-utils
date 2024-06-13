@@ -75,4 +75,4 @@ In case of long running messages it is advised to configure `maxNumberOfMessages
 If the number of configured workers is higher than the `maxNumberOfMessages` that means that multiple `ReceiveMessageRequest`s can be performed while messages from previous requests are already in processing. This results in concurrent processing of multiple message while keeping the number of idle messages smaller.
 
 ## Release HowTo
-see [here](.travis/HOWTO.md)
+see [here](doc/README.md)
