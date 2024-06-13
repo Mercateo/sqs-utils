@@ -6,7 +6,6 @@ import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
 import io.awspring.cloud.messaging.listener.Acknowledgment;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -22,7 +21,7 @@ public class MessageWrapper<I> {
     @Getter
     private final Message<I> message;
 
-    private final AtomicBoolean acknowledged = new AtomicBoolean(false);
+    private boolean acknowledged = false;
 
     public String getMessageId() {
         return message.getHeaders().get("MessageId", String.class);
@@ -39,11 +38,11 @@ public class MessageWrapper<I> {
             throw new NullPointerException("there is no \"Acknowledgment\" in the message headers");
         }
         acknowledgment.acknowledge().get(2, TimeUnit.MINUTES);
-        acknowledged.set(true);
+        acknowledged = true;
     }
 
     public synchronized void changeMessageVisibility(AmazonSQS sqsClient, ChangeMessageVisibilityRequest request) {
-        if (acknowledged.get()) {
+        if (acknowledged) {
             return;
         }
         sqsClient.changeMessageVisibility(request);
