@@ -15,7 +15,7 @@
  */
 package com.mercateo.sqs.utils.visibility;
 
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.sqs.*;
 import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
 import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
@@ -33,10 +33,10 @@ import lombok.NonNull;
 @Named
 public class VisibilityTimeoutExtenderFactory {
 
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
 
     @Inject
-    public VisibilityTimeoutExtenderFactory(@NonNull AmazonSQS amazonSQS) {
+    public VisibilityTimeoutExtenderFactory(@NonNull SqsClient amazonSQS) {
         this.sqsClient = amazonSQS;
     }
 

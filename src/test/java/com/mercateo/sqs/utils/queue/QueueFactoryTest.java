@@ -5,11 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
 import com.amazonaws.services.sqs.model.GetQueueUrlResult;
+import com.amazonaws.services.sqs.model.QueueAttributeName;
 import com.google.common.testing.NullPointerTester;
 
 import java.util.HashMap;
@@ -18,11 +16,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse;
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse;
 
 public class QueueFactoryTest {
 
     @Mock
-    private AmazonSQS amazonSQS;
+    private SqsClient amazonSQS;
 
     private QueueFactory uut;
 
@@ -46,13 +49,13 @@ public class QueueFactoryTest {
     public void testGet() {
         // given
         QueueName qn = new QueueName("q1");
-        GetQueueUrlResult queueUrlResult = mock(GetQueueUrlResult.class);
-        when(queueUrlResult.getQueueUrl()).thenReturn("url1");
-        GetQueueAttributesResult attributesResult = mock(GetQueueAttributesResult.class);
-        HashMap<String, String> attributes = new HashMap<>();
-        attributes.put("1", "3");
-        attributes.put("hi", "ho");
-        when(attributesResult.getAttributes()).thenReturn(attributes);
+        GetQueueUrlResponse queueUrlResult = mock(GetQueueUrlResponse.class);
+        when(queueUrlResult.queueUrl()).thenReturn("url1");
+        GetQueueAttributesResponse attributesResult = mock(GetQueueAttributesResponse.class);
+        HashMap<software.amazon.awssdk.services.sqs.model.QueueAttributeName, String> attributes = new HashMap<>();
+        attributes.put(software.amazon.awssdk.services.sqs.model.QueueAttributeName.fromValue("1"), "3");
+        attributes.put(software.amazon.awssdk.services.sqs.model.QueueAttributeName.fromValue("hi"), "ho");
+        when(attributesResult.attributes()).thenReturn(attributes);
         when(amazonSQS.getQueueUrl(any(GetQueueUrlRequest.class))).thenReturn(queueUrlResult);
         when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(
                 attributesResult);
