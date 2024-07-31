@@ -10,7 +10,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import com.mercateo.sqs.utils.queue.Queue;
 import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
@@ -31,13 +30,14 @@ import org.mockito.Spy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 public class LongRunningMessageHandlerIntegrationTest {
 
     private MessageHandlingRunnableFactory messageHandlingRunnableFactory = new MessageHandlingRunnableFactory();
 
     @Mock
-    private AmazonSQS sqsClient;
+    private SqsClient sqsClient;
 
     private MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
 
@@ -47,7 +47,7 @@ public class LongRunningMessageHandlerIntegrationTest {
     @Spy
     private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
     
-    @Mock
+    @Spy
     private ErrorHandlingStrategy<InputObject> errorHandlingStrategy;
 
     private LongRunningMessageHandler<InputObject, String> uut;

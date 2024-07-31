@@ -15,9 +15,8 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import com.amazonaws.AmazonServiceException;
-
 import org.springframework.messaging.Message;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 public interface ErrorHandlingStrategy<I> {
 
@@ -52,7 +51,7 @@ public interface ErrorHandlingStrategy<I> {
      * @param  message that was tried to extend
      */
     
-    void handleExtendVisibilityTimeoutException(AmazonServiceException e, Message<?> message);
+    void handleExtendVisibilityTimeoutException(AwsServiceException e, Message<?> message);
     
     /**
      * Defines how exceptions, that are thrown by the message acknowledgement are handled.
@@ -63,7 +62,7 @@ public interface ErrorHandlingStrategy<I> {
      * @param message that was tried to extend
      */
     
-    void handleAcknowledgeMessageException(AmazonServiceException e, Message<I> message);
+    void handleAcknowledgeMessageException(AwsServiceException e, Message<I> message);
 
 
 

@@ -15,10 +15,6 @@
  */
 package com.mercateo.sqs.utils.queue;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
-
 import java.util.Collections;
 import java.util.Map;
 
@@ -26,25 +22,32 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
 import lombok.NonNull;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 
 @Named
 public class QueueFactory {
 
-    private final AmazonSQS amazonSQS;
+    private final SqsClient amazonSQS;
 
     @Inject
-    public QueueFactory(@NonNull AmazonSQS amazonSQS) {
+    public QueueFactory(@NonNull SqsClient amazonSQS) {
         this.amazonSQS = amazonSQS;
     }
 
     public Queue get(@NonNull QueueName queueName) {
-        GetQueueUrlRequest urlRequest = new GetQueueUrlRequest().withQueueName(queueName.getId());
-        String queueUrl = amazonSQS.getQueueUrl(urlRequest).getQueueUrl();
+        software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest urlRequest = GetQueueUrlRequest.builder()
+                .queueName(queueName.getId())
+                .build();
+        String queueUrl = amazonSQS.getQueueUrl(urlRequest).queueUrl();
 
-        GetQueueAttributesRequest attributesRequest = new GetQueueAttributesRequest(queueUrl,
-                Collections.singletonList("All"));
+        software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest attributesRequest = GetQueueAttributesRequest
+                .builder()
+                .queueUrl(queueUrl)
+                .attributeNamesWithStrings(Collections.singletonList("All")).build();
         Map<String, String> attributes = amazonSQS.getQueueAttributes(attributesRequest)
-                .getAttributes();
+                .attributesAsStrings();
 
         return new Queue(queueName, queueUrl, attributes);
     }

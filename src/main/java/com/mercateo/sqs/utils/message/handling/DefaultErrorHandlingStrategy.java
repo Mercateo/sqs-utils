@@ -15,12 +15,11 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import com.amazonaws.AmazonServiceException;
-
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.Message;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 @Slf4j
 class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
@@ -42,7 +41,7 @@ class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
     }
 
     @Override
-    public void handleExtendVisibilityTimeoutException(AmazonServiceException e,
+    public void handleExtendVisibilityTimeoutException(AwsServiceException e,
             Message<?> message) {
 
         String msg = "error while extending message visibility for " + message.getHeaders().get("MessageId",
@@ -53,7 +52,7 @@ class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
     }
 
     @Override
-    public void handleAcknowledgeMessageException(AmazonServiceException e, Message<I> message) {
+    public void handleAcknowledgeMessageException(AwsServiceException e, Message<I> message) {
         String messageId = message.getHeaders().get("MessageId", String.class);
         log.error("could not acknowledge " + messageId, e);
     }
