@@ -17,6 +17,7 @@ package com.mercateo.sqs.utils.message.handling;
 
 import io.awspring.cloud.messaging.listener.Acknowledgment;
 
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import lombok.NonNull;
@@ -58,9 +59,9 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
     @Override
     public void run() {
-        String messageId = message.getHeaders().get("MessageId", String.class);
-        Acknowledgment acknowledgment = message.getHeaders().get("Acknowledgment",
-                Acknowledgment.class);
+        String messageId = String.valueOf(message.getHeaders().get("id", UUID.class));
+        Acknowledgement acknowledgment = message.getHeaders().get("Acknowledgment",
+                Acknowledgement.class);
         try {
             log.info("starting processing of message " + messageId);
 

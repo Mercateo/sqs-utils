@@ -44,7 +44,7 @@ public class LogAndRethrowStrategyTest {
 
     private Message<Integer> createMessage() {
         HashMap<String, Object> headerMap = new HashMap<>();
-        headerMap.put("MessageId", "mid");
+        headerMap.put("id", "mid");
         headerMap.put("Acknowledgment", acknowledgment);
         return new GenericMessage<>(3, new MessageHeaders(headerMap));
     }

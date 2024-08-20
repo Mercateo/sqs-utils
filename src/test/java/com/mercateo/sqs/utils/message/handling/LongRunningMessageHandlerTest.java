@@ -16,6 +16,7 @@ import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -113,7 +114,8 @@ public class LongRunningMessageHandlerTest {
 
     private Message<Integer> createMessage() {
         Map<String, Object> headers = new HashMap<>();
-        headers.put("MessageId", "messageId");
+        String uuid = UUID.fromString("bf308aa2-bf48-49b8-a839-61611c710430").toString();
+        headers.put("id", uuid);
 
         MessageHeaders messageHeaders = new MessageHeaders(headers);
         return new GenericMessage<>(1, messageHeaders);

@@ -16,11 +16,11 @@
 package com.mercateo.sqs.utils.message.handling;
 
 import com.mercateo.sqs.utils.queue.Queue;
+import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtender;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +29,6 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import org.slf4j.MDC;
 import org.springframework.messaging.Message;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -81,24 +80,7 @@ public class LongRunningMessageHandler<I, O> {
         this.awaitShutDown = awaitShutDown;
         this.errorHandlingStrategy = errorHandlingStrategy;
 
-        messageProcessingExecutor = new ThreadPoolTaskExecutor() {
-            @Override
-            public Future<?> submit(Runnable task) {
-                Map<String, String> current = MDC.getCopyOfContextMap();
-                return super.submit(() -> {
-                    try {
-                        if (current != null) {
-                            current.forEach(MDC::put);
-                        }
-                        task.run();
-                    } finally {
-                        if (current != null) {
-                            current.keySet().forEach(MDC::remove);
-                        }
-                    }
-                });
-            }
-        };
+        messageProcessingExecutor = new ThreadPoolTaskExecutor();
         messageProcessingExecutor.setCorePoolSize(numberOfThreads);
         messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
         messageProcessingExecutor.setThreadNamePrefix(getClass().getSimpleName()+"-"+queue.getName().getId()+"-");
@@ -149,8 +131,8 @@ public class LongRunningMessageHandler<I, O> {
      *            the message to be processed
      */
     public void handleMessage(@NonNull Message<I> message) {
-        MessageWrapper<I> messageWrapper = new MessageWrapper<>(message);
-        String messageId = messageWrapper.getMessageId();
+        String messageId = String.valueOf(message.getHeaders().get("id", UUID.class));
+
         if (messagesInProcessing.contains(messageId)) {
             return;
         }
@@ -158,7 +140,7 @@ public class LongRunningMessageHandler<I, O> {
 
         ScheduledFuture<?> timeoutExtender;
         try {
-            timeoutExtender = scheduleNewVisibilityTimeoutExtender(messageWrapper);
+            timeoutExtender = scheduleNewVisibilityTimeoutExtender(message);
         } catch (RuntimeException rex) {
             messagesInProcessing.remove(messageId);
             log.error("error while trying to schedule timeout extender", rex);
@@ -166,7 +148,7 @@ public class LongRunningMessageHandler<I, O> {
         }
 
         try {
-            scheduleNewMessageTask(messageWrapper, timeoutExtender);
+            scheduleNewMessageTask(message, timeoutExtender);
         } catch (RuntimeException rex) {
             messagesInProcessing.remove(messageId);
             timeoutExtender.cancel(true);
@@ -192,20 +174,19 @@ public class LongRunningMessageHandler<I, O> {
         return messagesInProcessing.free();
     }
 
-    private void scheduleNewMessageTask(@NonNull MessageWrapper<I> messageWrapper,
+    private void scheduleNewMessageTask(@NonNull Message<I> message,
             ScheduledFuture<?> visibilityTimeoutExtender) {
         MessageHandlingRunnable<I, O> messageTask = messageHandlingRunnableFactory.get(worker,
-                messageWrapper, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender, errorHandlingStrategy);
+                message, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender, errorHandlingStrategy);
 
         messageProcessingExecutor.submit(messageTask);
     }
 
-    private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull MessageWrapper<I> messageWrapper) {
-        return timeoutExtensionExecutor.scheduleAtFixedRate(
-                timeoutExtenderFactory.get(messageWrapper, queue, errorHandlingStrategy),
-                timeUntilVisibilityTimeoutExtension.toMillis(),
-                timeUntilVisibilityTimeoutExtension.toMillis(),
-                TimeUnit.MILLISECONDS);
+    private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull Message<I> message) {
+        VisibilityTimeoutExtender timeoutExtender = timeoutExtenderFactory.get(message, queue, errorHandlingStrategy);
+        return timeoutExtensionExecutor.scheduleAtFixedRate(timeoutExtender,
+                timeUntilVisibilityTimeoutExtension.toMillis(), timeUntilVisibilityTimeoutExtension
+                        .toMillis(), TimeUnit.MILLISECONDS);
     }
 
     /**

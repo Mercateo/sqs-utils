@@ -8,10 +8,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.google.common.testing.NullPointerTester;
+
 import io.awspring.cloud.messaging.listener.Acknowledgment;
 
 import java.util.HashMap;
-import java.util.concurrent.Future;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +42,8 @@ class MessageHandlingRunnableTest {
     @Mock
     private SetWithUpperBound<String> messages;
 
+    private UUID messageGeneratedUUID;
+
     @Mock
     private ScheduledFuture<?> visibilityTimeoutExtender;
 
@@ -51,11 +56,22 @@ class MessageHandlingRunnableTest {
     public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         HashMap<String, Object> headerMap = new HashMap<>();
-        headerMap.put("MessageId", "mid");
+        headerMap.put("MessageId", "bf308aa2-bf48-49b8-a839-61611c710431");
         headerMap.put("Acknowledgment", acknowledgment);
         message = new GenericMessage<>(3, new MessageHeaders(headerMap));
-        uut = new MessageHandlingRunnable<>(worker, new MessageWrapper<>(message), finishedMessageCallback, messages,
+        messageGeneratedUUID = message.getHeaders().getId();
+        uut = new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messages,
                 visibilityTimeoutExtender, errorHandlingStrategy);
+    }
+
+    @Test
+    void testNullContracts() throws Exception {
+        // given
+        NullPointerTester nullPointerTester = new NullPointerTester();
+
+        // when
+        nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
+        nullPointerTester.testAllPublicConstructors(uut.getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -72,7 +88,7 @@ class MessageHandlingRunnableTest {
         verify(finishedMessageCallback).call(3, "3S");
         verify(acknowledgment).acknowledge();
         verify(visibilityTimeoutExtender).cancel(false);
-        verify(messages).remove("mid");
+        verify(messages).remove(messageGeneratedUUID.toString());
     }
 
     @Test
@@ -91,7 +107,7 @@ class MessageHandlingRunnableTest {
         assertThat(result).isEqualTo(e);
         verify(errorHandlingStrategy).handleWorkerException(e, message);
         verify(visibilityTimeoutExtender).cancel(false);
-        verify(messages).remove("mid");
+        verify(messages).remove(messageGeneratedUUID.toString());
     }
 
     @SuppressWarnings("unchecked")
@@ -109,6 +125,6 @@ class MessageHandlingRunnableTest {
         verify(errorHandlingStrategy).handleWorkerException(e, message);
         verify(acknowledgment).acknowledge();
         verify(visibilityTimeoutExtender).cancel(false);
-        verify(messages).remove("mid");
+        verify(messages).remove(messageGeneratedUUID.toString());
     }
 }
