@@ -20,9 +20,6 @@ import com.mercateo.sqs.utils.queue.QueueFactory;
 import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
-import io.awspring.cloud.messaging.listener.SimpleMessageListenerContainer;
-
-import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,14 +43,13 @@ public class LongRunningMessageHandlerFactory {
     private final ScheduledExecutorService executorService;
 
     // visible for testing
-    final int maxNumberOfMessagesPerBatch;
+    int maxNumberOfMessagesPerBatch;
 
     @Inject
     public LongRunningMessageHandlerFactory(
             @NonNull MessageHandlingRunnableFactory messageHandlingRunnableFactory,
             @NonNull VisibilityTimeoutExtenderFactory timeoutExtenderFactory,
-            @NonNull QueueFactory queueFactory,
-            @NonNull SimpleMessageListenerContainer simpleMessageListenerContainer) {
+            @NonNull QueueFactory queueFactory) {
         this.messageHandlingRunnableFactory = messageHandlingRunnableFactory;
         this.timeoutExtenderFactory = timeoutExtenderFactory;
         this.queueFactory = queueFactory;
@@ -73,27 +69,11 @@ public class LongRunningMessageHandlerFactory {
                     }
                 });
 
-        this.maxNumberOfMessagesPerBatch = extractMaxNumberOfMessagesFromListenerContainer(
-                simpleMessageListenerContainer);
+        this.maxNumberOfMessagesPerBatch = 10;
     }
 
-    private int extractMaxNumberOfMessagesFromListenerContainer(
-            @NonNull SimpleMessageListenerContainer simpleMessageListenerContainer) {
-        try {
-            Field f = simpleMessageListenerContainer.getClass().getSuperclass().getDeclaredField(
-                    "maxNumberOfMessages");
-            f.setAccessible(true);
-            Integer maxNumberOfMessages = (Integer) f.get(simpleMessageListenerContainer);
-            if (maxNumberOfMessages != null) {
-                return maxNumberOfMessages;
-            } else {
-                // org.springframework.cloud.aws.messaging.listener.AbstractMessageListenerContainer.DEFAULT_MAX_NUMBER_OF_MESSAGES
-                return 10;
-            }
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new IllegalStateException(
-                    "Cannot get BatchSize of SimpleMessageListenerContainer", e);
-        }
+    public void setMaxConcurrentMessages(Integer maxConcurrentMessages) {
+        this.maxNumberOfMessagesPerBatch = maxConcurrentMessages;
     }
 
     /**
