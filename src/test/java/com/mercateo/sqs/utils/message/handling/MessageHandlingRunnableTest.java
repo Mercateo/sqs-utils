@@ -10,8 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.testing.NullPointerTester;
 
-import io.awspring.cloud.messaging.listener.Acknowledgment;
-
+import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +31,7 @@ class MessageHandlingRunnableTest {
     private MessageWorkerWithHeaders<Integer, String> worker;
 
     @Mock
-    private Acknowledgment acknowledgment;
+    private Acknowledgement acknowledgment;
 
     private Message<Integer> message;
 
@@ -79,14 +78,14 @@ class MessageHandlingRunnableTest {
     void testRun() throws Throwable {
         // given
         when(worker.work(3, message.getHeaders())).thenReturn("3S");
-        when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
+        when(acknowledgment.acknowledgeAsync()).thenReturn(mock(CompletableFuture.class));
 
         // when
         uut.run();
 
         // then
         verify(finishedMessageCallback).call(3, "3S");
-        verify(acknowledgment).acknowledge();
+        verify(acknowledgment).acknowledgeAsync();
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove(messageGeneratedUUID.toString());
     }
@@ -116,14 +115,14 @@ class MessageHandlingRunnableTest {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getHeaders());
-        when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
+        when(acknowledgment.acknowledgeAsync()).thenReturn(mock(CompletableFuture.class));
 
         // when
         uut.run();
 
         // then
         verify(errorHandlingStrategy).handleWorkerException(e, message);
-        verify(acknowledgment).acknowledge();
+        verify(acknowledgment).acknowledgeAsync();
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove(messageGeneratedUUID.toString());
     }

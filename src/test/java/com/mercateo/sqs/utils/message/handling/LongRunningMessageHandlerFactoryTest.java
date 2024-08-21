@@ -7,8 +7,6 @@ import com.mercateo.sqs.utils.queue.QueueFactory;
 import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
-import io.awspring.cloud.messaging.listener.SimpleMessageListenerContainer;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -30,9 +28,8 @@ public class LongRunningMessageHandlerFactoryTest {
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
-        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
         uut = new LongRunningMessageHandlerFactory(messageHandlingRunnableFactory,
-                timeoutExtenderFactory, queueFactory, simpleMessageListenerContainer);
+                timeoutExtenderFactory, queueFactory);
     }
 
     @Test
@@ -43,6 +40,7 @@ public class LongRunningMessageHandlerFactoryTest {
         nullPointerTester.setDefault(VisibilityTimeoutExtenderFactory.class,
                 timeoutExtenderFactory);
         nullPointerTester.setDefault(QueueFactory.class, queueFactory);
+        nullPointerTester.setDefault(Integer.class, 10);
 
         // when
         nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
@@ -52,14 +50,13 @@ public class LongRunningMessageHandlerFactoryTest {
     @Test
     public void testConstructor_extractsTheCorrectMessageBatchSize() {
         // given
-        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
-        simpleMessageListenerContainer.setMaxNumberOfMessages(2);
 
         // when
         uut = new LongRunningMessageHandlerFactory(messageHandlingRunnableFactory,
-                timeoutExtenderFactory, queueFactory, simpleMessageListenerContainer);
+                timeoutExtenderFactory, queueFactory);
+        uut.setMaxConcurrentMessages(12);
 
         // then
-        assertEquals(2, uut.maxNumberOfMessagesPerBatch);
+        assertEquals(12, uut.maxNumberOfMessagesPerBatch);
     }
 }

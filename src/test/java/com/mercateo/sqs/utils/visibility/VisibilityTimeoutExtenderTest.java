@@ -13,8 +13,11 @@ import com.github.rholder.retry.WaitStrategies;
 import com.google.common.testing.NullPointerTester;
 import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
 
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -24,15 +27,17 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest;
+import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityResponse;
 
 class VisibilityTimeoutExtenderTest {
 
     private VisibilityTimeoutExtender uut;
 
     @Mock
-    private SqsClient sqsClient;
+    private SqsAsyncClient sqsClient;
 
     @Mock
     private ErrorHandlingStrategy<?> errorHandlingStrategy;
@@ -61,8 +66,11 @@ class VisibilityTimeoutExtenderTest {
     }
 
     @Test
-    void testRun() {
+    void testRun() throws ExecutionException, InterruptedException {
         // given
+        CompletableFuture<ChangeMessageVisibilityResponse> future = new CompletableFuture<>();
+        future.complete(ChangeMessageVisibilityResponse.builder().build());
+        when(sqsClient.changeMessageVisibility(any(ChangeMessageVisibilityRequest.class))).thenReturn(future);
 
         // when
         uut.run();
@@ -82,7 +90,8 @@ class VisibilityTimeoutExtenderTest {
     @Test
     void retryForUnknownHostException() {
 
-        software.amazon.awssdk.core.exception.SdkClientException sdkClientException = software.amazon.awssdk.core.exception.SdkClientException.builder().build();
+        SdkClientException sdkClientException =
+                SdkClientException.builder().cause(new UnknownHostException()).build();
 
         // given
         when(sqsClient.changeMessageVisibility(any(ChangeMessageVisibilityRequest.class)))
@@ -99,7 +108,7 @@ class VisibilityTimeoutExtenderTest {
     @Test
     void dontRetryForSdkClientExceptionsInGeneral() {
 
-        software.amazon.awssdk.core.exception.SdkClientException sdkClientException = software.amazon.awssdk.core.exception.SdkClientException.builder().build();
+        SdkClientException sdkClientException = SdkClientException.builder().build();
 
         // given
         when(sqsClient.changeMessageVisibility(any(ChangeMessageVisibilityRequest.class))).thenThrow(sdkClientException);

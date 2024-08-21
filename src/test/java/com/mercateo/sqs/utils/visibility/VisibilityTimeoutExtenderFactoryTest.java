@@ -8,12 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
 public class VisibilityTimeoutExtenderFactoryTest {
 
     @Mock
-    private SqsClient amazonSQS;
+    private SqsAsyncClient amazonSQS;
 
     private VisibilityTimeoutExtenderFactory uut;
 

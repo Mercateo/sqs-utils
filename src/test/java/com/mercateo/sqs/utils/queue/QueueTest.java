@@ -12,11 +12,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 public class QueueTest {
 
     @Mock
-    private Map<String, String> queueAttributes;
+    private Map<QueueAttributeName, String> queueAttributes;
 
     private Queue uut;
 
@@ -42,7 +43,7 @@ public class QueueTest {
     @Test
     public void testGetDefaultVisibilityTimeout() {
         // given
-        Mockito.when(queueAttributes.get("VisibilityTimeout")).thenReturn("734");
+        Mockito.when(queueAttributes.get(QueueAttributeName.VISIBILITY_TIMEOUT)).thenReturn("734");
 
         // when
         Duration defaultVisibilityTimeout = uut.getDefaultVisibilityTimeout();

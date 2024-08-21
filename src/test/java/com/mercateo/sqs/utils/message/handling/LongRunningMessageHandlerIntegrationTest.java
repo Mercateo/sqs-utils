@@ -32,14 +32,15 @@ import org.mockito.Spy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 public class LongRunningMessageHandlerIntegrationTest {
 
     private MessageHandlingRunnableFactory messageHandlingRunnableFactory = new MessageHandlingRunnableFactory();
 
     @Mock
-    private SqsClient sqsClient;
+    private SqsAsyncClient sqsClient;
 
     private MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
 
@@ -48,7 +49,7 @@ public class LongRunningMessageHandlerIntegrationTest {
 
     @Spy
     private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
-    
+
     @Spy
     private ErrorHandlingStrategy<InputObject> errorHandlingStrategy;
 
@@ -57,8 +58,8 @@ public class LongRunningMessageHandlerIntegrationTest {
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put("VisibilityTimeout", "10");
+        Map<QueueAttributeName, String> attributes = new HashMap<>();
+        attributes.put(QueueAttributeName.VISIBILITY_TIMEOUT, "10");
         Queue queue = new Queue(new QueueName("queueName"), "queueUrl", attributes);
         VisibilityTimeoutExtenderFactory timeoutExtenderFactory = new VisibilityTimeoutExtenderFactory(
                 sqsClient);
@@ -176,30 +177,7 @@ public class LongRunningMessageHandlerIntegrationTest {
         assertThatThrownBy(() -> uut.handleMessage(message6));
 
         // then
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1",
-                "messageId2", "messageId3", "messageId4", "messageId5");
-    }
-
-    @Test
-    public void testHandleMessage_performsDeduplication() {
-        // given
-        Message<InputObject> message1_1 = createMessage(1);
-        Message<InputObject> message1_2 = createMessage(1);
-
-        Thread thread1 = new Thread(() -> uut.handleMessage(message1_1));
-        thread1.start();
-        await().until(() -> !thread1.isAlive());
-
-        // when
-        Thread thread2 = new Thread(() -> uut.handleMessage(message1_2));
-        thread2.start();
-
-        // then
-        await().until(() -> !thread2.isAlive());
-        assertTrue(message1_1.getPayload().isRunning());
-        assertFalse(message1_2.getPayload().isRunning());
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1");
-        verify(scheduledExecutorService).scheduleAtFixedRate(any(), anyLong(), anyLong(), any());
+        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly(uuids.toArray(String[]::new));
     }
 
     @Test

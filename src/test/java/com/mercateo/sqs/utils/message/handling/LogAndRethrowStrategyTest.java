@@ -3,8 +3,7 @@ package com.mercateo.sqs.utils.message.handling;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-import io.awspring.cloud.messaging.listener.Acknowledgment;
-
+import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
 import java.util.HashMap;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +17,7 @@ import org.springframework.messaging.support.GenericMessage;
 public class LogAndRethrowStrategyTest {
 
     @Mock
-    private Acknowledgment acknowledgment;
+    private Acknowledgement acknowledgment;
 
     private DefaultErrorHandlingStrategy<Integer> uut;
 
