@@ -15,7 +15,7 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import io.awspring.cloud.messaging.listener.Acknowledgment;
+import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
 
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -84,10 +84,10 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
         }
     }
 
-    private void acknowledge(String messageId, Acknowledgment acknowledgment) {
+    private void acknowledge(String messageId, Acknowledgement acknowledgment) {
         try {
             try {
-                acknowledgment.acknowledge().get();
+                acknowledgment.acknowledgeAsync().get();
             } catch (AwsServiceException e) {
                 errorHandlingStrategy.handleAcknowledgeMessageException(e, message);
             }
