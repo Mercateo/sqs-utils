@@ -22,32 +22,35 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
 import lombok.NonNull;
-import software.amazon.awssdk.services.sqs.SqsClient;
+import lombok.SneakyThrows;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 @Named
 public class QueueFactory {
 
-    private final SqsClient amazonSQS;
+    private final SqsAsyncClient amazonSQS;
 
     @Inject
-    public QueueFactory(@NonNull SqsClient amazonSQS) {
+    public QueueFactory(@NonNull SqsAsyncClient amazonSQS) {
         this.amazonSQS = amazonSQS;
     }
 
+    @SneakyThrows
     public Queue get(@NonNull QueueName queueName) {
-        software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest urlRequest = GetQueueUrlRequest.builder()
+        GetQueueUrlRequest urlRequest = GetQueueUrlRequest.builder()
                 .queueName(queueName.getId())
                 .build();
-        String queueUrl = amazonSQS.getQueueUrl(urlRequest).queueUrl();
+        String queueUrl = amazonSQS.getQueueUrl(urlRequest).get().queueUrl();
 
-        software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest attributesRequest = GetQueueAttributesRequest
+        GetQueueAttributesRequest attributesRequest = GetQueueAttributesRequest
                 .builder()
                 .queueUrl(queueUrl)
                 .attributeNamesWithStrings(Collections.singletonList("All")).build();
-        Map<String, String> attributes = amazonSQS.getQueueAttributes(attributesRequest)
-                .attributesAsStrings();
+        Map<QueueAttributeName, String> attributes = amazonSQS.getQueueAttributes(attributesRequest)
+                .get().attributes();
 
         return new Queue(queueName, queueUrl, attributes);
     }

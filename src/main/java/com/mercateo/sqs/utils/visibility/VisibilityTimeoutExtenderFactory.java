@@ -33,10 +33,10 @@ import lombok.NonNull;
 @Named
 public class VisibilityTimeoutExtenderFactory {
 
-    private final SqsClient sqsClient;
+    private final SqsAsyncClient sqsClient;
 
     @Inject
-    public VisibilityTimeoutExtenderFactory(@NonNull SqsClient amazonSQS) {
+    public VisibilityTimeoutExtenderFactory(@NonNull SqsAsyncClient amazonSQS) {
         this.sqsClient = amazonSQS;
     }
 

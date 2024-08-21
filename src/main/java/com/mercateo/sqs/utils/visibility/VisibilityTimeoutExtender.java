@@ -30,13 +30,12 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.Message;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityResponse;
 
 @Slf4j
 public class VisibilityTimeoutExtender implements Runnable {
 
-    private final SqsClient sqsClient;
+    private final SqsAsyncClient sqsClient;
 
     private final ChangeMessageVisibilityRequest request;
 
@@ -46,7 +45,7 @@ public class VisibilityTimeoutExtender implements Runnable {
 
     private final Retryer<ChangeMessageVisibilityResponse> retryer;
 
-    VisibilityTimeoutExtender(@NonNull SqsClient sqsClient, @NonNull Duration newVisibilityTimeout,
+    VisibilityTimeoutExtender(@NonNull SqsAsyncClient sqsClient, @NonNull Duration newVisibilityTimeout,
             @NonNull Message<?> message, @NonNull String queueUrl,
             @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy,
             @NonNull RetryStrategy retryStrategy) {
@@ -75,7 +74,7 @@ public class VisibilityTimeoutExtender implements Runnable {
     public void run() {
         try {
             log.trace("changing message visibility: " + request);
-            retryer.call(() -> sqsClient.changeMessageVisibility(request));
+            retryer.call(() -> sqsClient.changeMessageVisibility(request).get());
         } catch (AwsServiceException e) {
             errorHandlingStrategy.handleExtendVisibilityTimeoutException(e, message);
         } catch (Exception e) {
