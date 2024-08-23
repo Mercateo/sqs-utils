@@ -29,26 +29,26 @@ class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
 
     @Override
     @SneakyThrows
-    public void handleWorkerException(Exception e, Message<I> message) {
-        String messageId = String.valueOf(message.getHeaders().get("id", UUID.class));
-        log.error("error while handling message " + messageId + ": " + message.getPayload(), e);
+    public void handleWorkerException(Exception e, MessageWrapper<I> message) {
+        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
+        log.error("error while handling message " + messageId + ": " + message.getMessage().getPayload(), e);
         throw e;
     }
 
     @Override
     @SneakyThrows
-    public void handleWorkerThrowable(Throwable t, Message<I> message) {
-        String messageId = String.valueOf(message.getHeaders().get("id", UUID.class));
-        log.error("error while handling message " + messageId + ": " + message.getPayload(), t);
+    public void handleWorkerThrowable(Throwable t, MessageWrapper<I> message) {
+        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
+        log.error("error while handling message " + messageId + ": " + message.getMessage().getPayload(), t);
         throw t;
     }
 
     @Override
     public void handleExtendVisibilityTimeoutException(AwsServiceException e,
-            Message<?> message) {
+            MessageWrapper<?> message) {
 
         String msg = "error while extending message visibility for " + Objects.requireNonNull(
-                message.getHeaders().get("id",
+                message.getMessage().getHeaders().get("id",
                         UUID.class));
         log.error(msg, e);
         throw e;
@@ -56,8 +56,8 @@ class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
     }
 
     @Override
-    public void handleAcknowledgeMessageException(AwsServiceException e, Message<I> message) {
-        String messageId = String.valueOf(message.getHeaders().get("id", UUID.class));
+    public void handleAcknowledgeMessageException(AwsServiceException e, MessageWrapper<I> message) {
+        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
         log.error("could not acknowledge " + messageId, e);
     }
 

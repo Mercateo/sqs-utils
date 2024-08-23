@@ -12,6 +12,7 @@ import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
 import com.google.common.testing.NullPointerTester;
 import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
+import com.mercateo.sqs.utils.message.handling.MessageWrapper;
 
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -47,8 +48,8 @@ class VisibilityTimeoutExtenderTest {
         MockitoAnnotations.openMocks(this);
         HashMap<String, Object> headerMap = new HashMap<>();
         headerMap.put("ReceiptHandle", "rhd");
-        GenericMessage<Object> message = new GenericMessage<>(new Object(), new MessageHeaders(
-                headerMap));
+        MessageWrapper<Object> message = new MessageWrapper<>(new GenericMessage<>(new Object(), new MessageHeaders(
+                headerMap)));
         RetryStrategy retryStrategy = new RetryStrategy(WaitStrategies.fixedWait(1, TimeUnit.MICROSECONDS),
                 StopStrategies.stopAfterAttempt(5));
         uut = new VisibilityTimeoutExtender(sqsClient, Duration.ofSeconds(10*60), message, "queue",

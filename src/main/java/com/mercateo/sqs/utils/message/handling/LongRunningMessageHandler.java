@@ -130,8 +130,8 @@ public class LongRunningMessageHandler<I, O> {
      * @param message
      *            the message to be processed
      */
-    public void handleMessage(@NonNull Message<I> message) {
-        String messageId = String.valueOf(message.getHeaders().get("id", UUID.class));
+    public void handleMessage(@NonNull MessageWrapper<I> message) {
+        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
 
         if (messagesInProcessing.contains(messageId)) {
             return;
@@ -174,7 +174,7 @@ public class LongRunningMessageHandler<I, O> {
         return messagesInProcessing.free();
     }
 
-    private void scheduleNewMessageTask(@NonNull Message<I> message,
+    private void scheduleNewMessageTask(@NonNull MessageWrapper<I> message,
             ScheduledFuture<?> visibilityTimeoutExtender) {
         MessageHandlingRunnable<I, O> messageTask = messageHandlingRunnableFactory.get(worker,
                 message, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender, errorHandlingStrategy);
@@ -182,7 +182,7 @@ public class LongRunningMessageHandler<I, O> {
         messageProcessingExecutor.submit(messageTask);
     }
 
-    private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull Message<I> message) {
+    private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull MessageWrapper<I> message) {
         VisibilityTimeoutExtender timeoutExtender = timeoutExtenderFactory.get(message, queue, errorHandlingStrategy);
         return timeoutExtensionExecutor.scheduleAtFixedRate(timeoutExtender,
                 timeUntilVisibilityTimeoutExtension.toMillis(), timeUntilVisibilityTimeoutExtension

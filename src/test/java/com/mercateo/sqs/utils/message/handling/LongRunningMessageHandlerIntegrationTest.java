@@ -72,8 +72,8 @@ public class LongRunningMessageHandlerIntegrationTest {
     @Test
     public void testHandleMessage_processesOneMessageAndReturns() {
         // given
-        Message<InputObject> message = createMessage(1);
-        String uuid = String.valueOf(message.getHeaders().get("id", UUID.class));
+        MessageWrapper<InputObject> message = createMessage(1);
+        String uuid = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
 
         // when
         Thread thread = new Thread(() -> uut.handleMessage(message));
@@ -81,17 +81,17 @@ public class LongRunningMessageHandlerIntegrationTest {
 
         // then
         await().until(() -> !thread.isAlive());
-        await().until(() -> message.getPayload().isRunning());
+        await().until(() -> message.getMessage().getPayload().isRunning());
         assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly(uuid);
     }
 
     @Test
     public void testHandleMessage_processesTwoMessagesAndBlocks() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
-        List<String> uuids = List.of(String.valueOf(message1.getHeaders().get("id", UUID.class)),
-                String.valueOf(message2.getHeaders().get("id", UUID.class)));
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        List<String> uuids = List.of(String.valueOf(message1.getMessage().getHeaders().get("id", UUID.class)),
+                String.valueOf(message2.getMessage().getHeaders().get("id", UUID.class)));
 
         Thread thread1 = new Thread(() -> uut.handleMessage(message1));
         thread1.start();
@@ -103,27 +103,27 @@ public class LongRunningMessageHandlerIntegrationTest {
 
         // then
         await().until(() -> Thread.State.WAITING == thread2.getState());
-        await().until(() -> message1.getPayload().isRunning());
-        await().until(() -> message2.getPayload().isRunning());
+        await().until(() -> message1.getMessage().getPayload().isRunning());
+        await().until(() -> message2.getMessage().getPayload().isRunning());
         assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly(uuids.toArray(String[]::new));
     }
 
     @Test
     public void testHandleMessage_processesFourMessagesAndFillsQueue() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
-        Message<InputObject> message3 = createMessage(3);
-        Message<InputObject> message4 = createMessage(4);
-        List<String> uuids = List.of(String.valueOf(message1.getHeaders().get("id", UUID.class)),
-                String.valueOf(message2.getHeaders().get("id", UUID.class)),
-                String.valueOf(message3.getHeaders().get("id", UUID.class)),
-                String.valueOf(message4.getHeaders().get("id", UUID.class)));
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        MessageWrapper<InputObject> message3 = createMessage(3);
+        MessageWrapper<InputObject> message4 = createMessage(4);
+        List<String> uuids = List.of(String.valueOf(message1.getMessage().getHeaders().get("id", UUID.class)),
+                String.valueOf(message2.getMessage().getHeaders().get("id", UUID.class)),
+                String.valueOf(message3.getMessage().getHeaders().get("id", UUID.class)),
+                String.valueOf(message4.getMessage().getHeaders().get("id", UUID.class)));
 
         new Thread(() -> uut.handleMessage(message1)).start();
         new Thread(() -> uut.handleMessage(message2)).start();
-        await().until(() -> message1.getPayload().isRunning());
-        await().until(() -> message2.getPayload().isRunning());
+        await().until(() -> message1.getMessage().getPayload().isRunning());
+        await().until(() -> message2.getMessage().getPayload().isRunning());
 
         // when
         Thread thread3 = new Thread(() -> uut.handleMessage(message3));
@@ -134,8 +134,8 @@ public class LongRunningMessageHandlerIntegrationTest {
         // then
         await().until(() -> Thread.State.WAITING == thread3.getState());
         await().until(() -> Thread.State.WAITING == thread4.getState());
-        assertFalse(message3.getPayload().isRunning());
-        assertFalse(message4.getPayload().isRunning());
+        assertFalse(message3.getMessage().getPayload().isRunning());
+        assertFalse(message4.getMessage().getPayload().isRunning());
         assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly(uuids.toArray(String[]::new));
         verify(scheduledExecutorService, times(4)).scheduleAtFixedRate(any(), anyLong(), anyLong(),
                 any());
@@ -144,23 +144,23 @@ public class LongRunningMessageHandlerIntegrationTest {
     @Test
     public void testHandleMessage_processesSixMessageAndCrashes() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
-        Message<InputObject> message3 = createMessage(3);
-        Message<InputObject> message4 = createMessage(4);
-        Message<InputObject> message5 = createMessage(5);
-        Message<InputObject> message6 = createMessage(6);
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        MessageWrapper<InputObject> message3 = createMessage(3);
+        MessageWrapper<InputObject> message4 = createMessage(4);
+        MessageWrapper<InputObject> message5 = createMessage(5);
+        MessageWrapper<InputObject> message6 = createMessage(6);
 
-        List<String> uuids = List.of(message1.getHeaders().get("id", UUID.class).toString(),
-                message2.getHeaders().get("id", UUID.class).toString(),
-                message3.getHeaders().get("id", UUID.class).toString(),
-                message4.getHeaders().get("id", UUID.class).toString(),
-                message5.getHeaders().get("id", UUID.class).toString());
+        List<String> uuids = List.of(message1.getMessage().getHeaders().get("id", UUID.class).toString(),
+                message2.getMessage().getHeaders().get("id", UUID.class).toString(),
+                message3.getMessage().getHeaders().get("id", UUID.class).toString(),
+                message4.getMessage().getHeaders().get("id", UUID.class).toString(),
+                message5.getMessage().getHeaders().get("id", UUID.class).toString());
 
         new Thread(() -> uut.handleMessage(message1)).start();
         new Thread(() -> uut.handleMessage(message2)).start();
-        await().until(() -> message1.getPayload().isRunning());
-        await().until(() -> message2.getPayload().isRunning());
+        await().until(() -> message1.getMessage().getPayload().isRunning());
+        await().until(() -> message2.getMessage().getPayload().isRunning());
 
         Thread thread3 = new Thread(() -> uut.handleMessage(message3));
         thread3.start();
@@ -183,36 +183,36 @@ public class LongRunningMessageHandlerIntegrationTest {
     @Test
     public void testHandleMessage_startsQueuedProcess() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
-        Message<InputObject> message3 = createMessage(3);
-        List<String> uuids = List.of(String.valueOf(message1.getHeaders().get("id", UUID.class)),
-                String.valueOf(message3.getHeaders().get("id", UUID.class)));
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        MessageWrapper<InputObject> message3 = createMessage(3);
+        List<String> uuids = List.of(String.valueOf(message1.getMessage().getHeaders().get("id", UUID.class)),
+                String.valueOf(message3.getMessage().getHeaders().get("id", UUID.class)));
 
         new Thread(() -> uut.handleMessage(message1)).start();
-        await().until(() -> message1.getPayload().isRunning());
+        await().until(() -> message1.getMessage().getPayload().isRunning());
         Thread thread2 = new Thread(() -> uut.handleMessage(message2));
         thread2.start();
-        await().until(() -> message2.getPayload().isRunning());
+        await().until(() -> message2.getMessage().getPayload().isRunning());
         Thread thread3 = new Thread(() -> uut.handleMessage(message3));
         thread3.start();
 
         // when
-        message2.getPayload().stop();
+        message2.getMessage().getPayload().stop();
 
         // then
         await().until(() -> Thread.State.WAITING == thread2.getState());
         await().until(() -> Thread.State.WAITING == thread3.getState());
-        assertTrue(message3.getPayload().isRunning());
+        assertTrue(message3.getMessage().getPayload().isRunning());
         assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly(uuids.toArray(String[]::new));
     }
 
     @Test
     public void testHandleMessage_resumesWaitingThreads() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
-        List<String> uuids = List.of(String.valueOf(message2.getHeaders().get("id", UUID.class)));
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        List<String> uuids = List.of(String.valueOf(message2.getMessage().getHeaders().get("id", UUID.class)));
 
         Thread thread1 = new Thread(() -> uut.handleMessage(message1));
         thread1.start();
@@ -223,20 +223,20 @@ public class LongRunningMessageHandlerIntegrationTest {
         await().until(() -> Thread.State.WAITING == thread2.getState());
 
         // when
-        message1.getPayload().stop();
+        message1.getMessage().getPayload().stop();
 
         // then
         await().until(() -> !thread2.isAlive());
         assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly(uuids.toArray(String[]::new));
     }
 
-    private Message<InputObject> createMessage(int number) {
+    private MessageWrapper<InputObject> createMessage(int number) {
         Map<String, Object> headers = new HashMap<>();
         headers.put("id", UUID.fromString("bf308aa2-bf48-49b8-a839-61611c71043" + number).toString());
         headers.put("ReceiptHandle", "receiptHandle" + number);
 
         MessageHeaders messageHeaders = new MessageHeaders(headers);
-        return new GenericMessage<>(new InputObject(), messageHeaders);
+        return new MessageWrapper<>(new GenericMessage<>(new InputObject(), messageHeaders));
     }
 
     private class TestWorkerWithHeaders implements MessageWorkerWithHeaders<InputObject, String> {

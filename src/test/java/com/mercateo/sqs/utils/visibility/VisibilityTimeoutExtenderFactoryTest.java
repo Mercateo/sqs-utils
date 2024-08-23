@@ -1,6 +1,7 @@
 package com.mercateo.sqs.utils.visibility;
 
 import com.google.common.testing.NullPointerTester;
+import com.mercateo.sqs.utils.message.handling.MessageWrapper;
 import com.mercateo.sqs.utils.queue.Queue;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ public class VisibilityTimeoutExtenderFactoryTest {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
         nullPointerTester.setDefault(Queue.class, Mockito.mock(Queue.class));
+        nullPointerTester.setDefault(MessageWrapper.class, Mockito.mock(MessageWrapper.class));
 
         // when
         nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);

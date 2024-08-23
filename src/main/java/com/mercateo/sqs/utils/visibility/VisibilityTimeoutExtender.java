@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest;
 import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.mercateo.sqs.utils.message.handling.ErrorHandlingStrategy;
+import com.mercateo.sqs.utils.message.handling.MessageWrapper;
 
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -39,14 +40,14 @@ public class VisibilityTimeoutExtender implements Runnable {
 
     private final ChangeMessageVisibilityRequest request;
 
-    private final Message<?> message;
+    private final MessageWrapper<?> message;
 
     private final ErrorHandlingStrategy<?> errorHandlingStrategy;
 
     private final Retryer<ChangeMessageVisibilityResponse> retryer;
 
     VisibilityTimeoutExtender(@NonNull SqsAsyncClient sqsClient, @NonNull Duration newVisibilityTimeout,
-            @NonNull Message<?> message, @NonNull String queueUrl,
+            @NonNull MessageWrapper<?> message, @NonNull String queueUrl,
             @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy,
             @NonNull RetryStrategy retryStrategy) {
         this.sqsClient = sqsClient;
@@ -61,7 +62,7 @@ public class VisibilityTimeoutExtender implements Runnable {
 
         request = ChangeMessageVisibilityRequest.builder()
                 .queueUrl(queueUrl)
-                .receiptHandle(message.getHeaders().get("ReceiptHandle", String.class))
+                .receiptHandle(message.getMessage().getHeaders().get("ReceiptHandle", String.class))
                 .visibilityTimeout(timeoutInSeconds(newVisibilityTimeout))
                 .build();
     }
@@ -78,7 +79,7 @@ public class VisibilityTimeoutExtender implements Runnable {
         } catch (AwsServiceException e) {
             errorHandlingStrategy.handleExtendVisibilityTimeoutException(e, message);
         } catch (Exception e) {
-            log.error("error while extending message visibility for " + message.getHeaders().get("MessageId",
+            log.error("error while extending message visibility for " + message.getMessage().getHeaders().get("MessageId",
                     String.class), e);
             throw new RuntimeException(e);
         }

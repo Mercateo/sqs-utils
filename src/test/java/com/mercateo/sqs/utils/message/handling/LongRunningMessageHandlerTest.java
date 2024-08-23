@@ -100,7 +100,7 @@ public class LongRunningMessageHandlerTest {
     @Test
     public void testHandleMessage_handlesExceptionDuringTimeoutExtension() {
         // given
-        Message<Integer> message = createMessage();
+        MessageWrapper<Integer> message = createMessage();
         RuntimeException exception = new RuntimeException("test exception");
         when(timeoutExtensionExecutor.scheduleAtFixedRate(any(), anyLong(), anyLong(), any()))
                 .thenThrow(exception);
@@ -112,12 +112,12 @@ public class LongRunningMessageHandlerTest {
         assertThat(uut.getMessagesInProcessing().getBackingSet()).isEmpty();
     }
 
-    private Message<Integer> createMessage() {
+    private MessageWrapper<Integer> createMessage() {
         Map<String, Object> headers = new HashMap<>();
         String uuid = UUID.fromString("bf308aa2-bf48-49b8-a839-61611c710430").toString();
         headers.put("id", uuid);
 
         MessageHeaders messageHeaders = new MessageHeaders(headers);
-        return new GenericMessage<>(1, messageHeaders);
+        return new MessageWrapper<>(new GenericMessage<>(1, messageHeaders));
     }
 }

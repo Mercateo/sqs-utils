@@ -33,7 +33,7 @@ class MessageHandlingRunnableTest {
     @Mock
     private Acknowledgement acknowledgment;
 
-    private Message<Integer> message;
+    private MessageWrapper<Integer> message;
 
     @Mock
     private FinishedMessageCallback<Integer, String> finishedMessageCallback;
@@ -57,8 +57,8 @@ class MessageHandlingRunnableTest {
         HashMap<String, Object> headerMap = new HashMap<>();
         headerMap.put("MessageId", "bf308aa2-bf48-49b8-a839-61611c710431");
         headerMap.put("Acknowledgment", acknowledgment);
-        message = new GenericMessage<>(3, new MessageHeaders(headerMap));
-        messageGeneratedUUID = message.getHeaders().getId();
+        message = new MessageWrapper<>(new GenericMessage<>(3, new MessageHeaders(headerMap)));
+        messageGeneratedUUID = message.getMessage().getHeaders().getId();
         uut = new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messages,
                 visibilityTimeoutExtender, errorHandlingStrategy);
     }
@@ -77,7 +77,7 @@ class MessageHandlingRunnableTest {
     @Test
     void testRun() throws Throwable {
         // given
-        when(worker.work(3, message.getHeaders())).thenReturn("3S");
+        when(worker.work(3, message.getMessage().getHeaders())).thenReturn("3S");
         when(acknowledgment.acknowledgeAsync()).thenReturn(mock(CompletableFuture.class));
 
         // when
@@ -94,7 +94,7 @@ class MessageHandlingRunnableTest {
     void testRun_throws_workerException_and_does_not_ack() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
-        doThrow(e).when(worker).work(3, message.getHeaders());
+        doThrow(e).when(worker).work(3, message.getMessage().getHeaders());
         doThrow(e).when(errorHandlingStrategy).handleWorkerException(e, message);
 
         // when
@@ -114,7 +114,7 @@ class MessageHandlingRunnableTest {
     void testRun_throws_workerException_and_acks() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
-        doThrow(e).when(worker).work(3, message.getHeaders());
+        doThrow(e).when(worker).work(3, message.getMessage().getHeaders());
         when(acknowledgment.acknowledgeAsync()).thenReturn(mock(CompletableFuture.class));
 
         // when

@@ -31,7 +31,7 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
     private final MessageWorkerWithHeaders<I, O> worker;
 
-    private final Message<I> message;
+    private final MessageWrapper<I> message;
 
     private final FinishedMessageCallback<I, O> finishedMessageCallback;
 
@@ -42,32 +42,31 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
     private final ErrorHandlingStrategy<I> errorHandlingStrategy;
 
     MessageHandlingRunnable(@NonNull MessageWorkerWithHeaders<I, O> worker,
-            @NonNull Message<I> message,
+            @NonNull MessageWrapper<I> message,
             @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
             @NonNull SetWithUpperBound<String> messages,
             @NonNull ScheduledFuture<?> visibilityTimeoutExtender,
             @NonNull ErrorHandlingStrategy<I> errorHandlingStrategy) {
 
         this.worker = worker;
-        this.message = message;
         this.finishedMessageCallback = finishedMessageCallback;
         this.messages = messages;
+        this.message = message;
         this.visibilityTimeoutExtender = visibilityTimeoutExtender;
         this.errorHandlingStrategy = errorHandlingStrategy;
-
     }
 
     @Override
     public void run() {
-        String messageId = String.valueOf(message.getHeaders().get("id", UUID.class));
-        Acknowledgement acknowledgment = message.getHeaders().get("Acknowledgment",
+        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
+        Acknowledgement acknowledgment = message.getMessage().getHeaders().get("Acknowledgment",
                 Acknowledgement.class);
         try {
             log.info("starting processing of message " + messageId);
 
-            O outcome = worker.work(message.getPayload(), message.getHeaders());
+            O outcome = worker.work(message.getMessage().getPayload(), message.getMessage().getHeaders());
 
-            finishedMessageCallback.call(message.getPayload(), outcome);
+            finishedMessageCallback.call(message.getMessage().getPayload(), outcome);
             acknowledge(messageId, acknowledgment);
             log.info("message task successfully processed and message acknowledged: " + messageId);
         } catch (InterruptedException e) {
