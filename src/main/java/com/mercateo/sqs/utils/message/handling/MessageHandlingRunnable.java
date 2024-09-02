@@ -15,16 +15,12 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
-
-import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
@@ -36,7 +32,7 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
     private final MessageWorkerWithHeaders<I, O> worker;
 
     @NonNull
-    private final MessageWrapper<I> message;
+    private final MessageWrapper<I> messageWrapper;
 
     @NonNull
     private final FinishedMessageCallback<I, O> finishedMessageCallback;
@@ -52,12 +48,12 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
     @Override
     public void run() {
-        String messageId = message.getMessageId();
+        String messageId = messageWrapper.getMessageId();
         try {
             log.info("starting processing of message " + messageId);
 
-            I payload = message.getMessage().getPayload();
-            MessageHeaders headers = message.getMessage().getHeaders();
+            I payload = messageWrapper.getMessage().getPayload();
+            MessageHeaders headers = messageWrapper.getMessage().getHeaders();
             O outcome = worker.work(payload, headers);
 
             finishedMessageCallback.call(payload, outcome);
@@ -66,10 +62,10 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
         } catch (InterruptedException e) {
             log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
-            errorHandlingStrategy.handleWorkerException(e, message);
+            errorHandlingStrategy.handleWorkerException(e, messageWrapper);
             acknowledge();
         } catch (Throwable t) {
-            errorHandlingStrategy.handleWorkerThrowable(t, message);
+            errorHandlingStrategy.handleWorkerThrowable(t, messageWrapper);
             acknowledge();
         } finally {
             visibilityTimeoutExtender.cancel(false);
@@ -80,12 +76,12 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
     private void acknowledge() {
         try {
             try {
-                message.acknowledge();
+                messageWrapper.acknowledge();
             } catch (AwsServiceException e) {
-                errorHandlingStrategy.handleAcknowledgeMessageException(e, message);
+                errorHandlingStrategy.handleAcknowledgeMessageException(e, messageWrapper);
             }
         } catch (Exception e) {
-            log.error("failure during acknowledge " + message.getMessageId(), e);
+            log.error("failure during acknowledge " + messageWrapper.getMessageId(), e);
         }
     }
 }

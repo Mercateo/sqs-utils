@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * </p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,8 +30,6 @@ import java.time.Duration;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityResponse;
-
 @Slf4j
 public class VisibilityTimeoutExtender implements Runnable {
 
@@ -39,18 +37,18 @@ public class VisibilityTimeoutExtender implements Runnable {
 
     private final ChangeMessageVisibilityRequest request;
 
-    private final MessageWrapper<?> message;
+    private final MessageWrapper<?> messageWrapper;
 
     private final ErrorHandlingStrategy<?> errorHandlingStrategy;
 
     private final Retryer<Void> retryer;
 
     VisibilityTimeoutExtender(@NonNull SqsAsyncClient sqsClient, @NonNull Duration newVisibilityTimeout,
-            @NonNull MessageWrapper<?> message, @NonNull String queueUrl,
+            @NonNull MessageWrapper<?> messageWrapper, @NonNull String queueUrl,
             @NonNull ErrorHandlingStrategy<?> errorHandlingStrategy,
             @NonNull RetryStrategy retryStrategy) {
         this.sqsClient = sqsClient;
-        this.message = message;
+        this.messageWrapper = messageWrapper;
         this.errorHandlingStrategy = errorHandlingStrategy;
         this.retryer = RetryerBuilder
                 .<Void> newBuilder()
@@ -61,7 +59,7 @@ public class VisibilityTimeoutExtender implements Runnable {
 
         request = ChangeMessageVisibilityRequest.builder()
                 .queueUrl(queueUrl)
-                .receiptHandle(message.getReceiptHandle())
+                .receiptHandle(messageWrapper.getReceiptHandle())
                 .visibilityTimeout(timeoutInSeconds(newVisibilityTimeout))
                 .build();
     }
@@ -74,13 +72,13 @@ public class VisibilityTimeoutExtender implements Runnable {
     public void run() {
         try {
             retryer.call(() -> {
-                message.changeMessageVisibility(sqsClient, request);
+                messageWrapper.changeMessageVisibility(sqsClient, request);
                 return null;
             });
         } catch (AwsServiceException e) {
-            errorHandlingStrategy.handleExtendVisibilityTimeoutException(e, message);
+            errorHandlingStrategy.handleExtendVisibilityTimeoutException(e, messageWrapper);
         } catch (Exception e) {
-            log.error("error while extending message visibility for " + message.getMessage().getHeaders().get("MessageId",
+            log.error("error while extending message visibility for " + messageWrapper.getMessage().getHeaders().get("MessageId",
                     String.class), e);
             throw new RuntimeException(e);
         }
