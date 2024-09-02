@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,77 +21,71 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 @Slf4j
+@RequiredArgsConstructor
 public class MessageHandlingRunnable<I, O> implements Runnable {
 
+    @NonNull
     private final MessageWorkerWithHeaders<I, O> worker;
 
+    @NonNull
     private final MessageWrapper<I> message;
 
+    @NonNull
     private final FinishedMessageCallback<I, O> finishedMessageCallback;
 
+    @NonNull
     private final SetWithUpperBound<String> messages;
 
+    @NonNull
     private final ScheduledFuture<?> visibilityTimeoutExtender;
 
+    @NonNull
     private final ErrorHandlingStrategy<I> errorHandlingStrategy;
-
-    MessageHandlingRunnable(@NonNull MessageWorkerWithHeaders<I, O> worker,
-            @NonNull MessageWrapper<I> message,
-            @NonNull FinishedMessageCallback<I, O> finishedMessageCallback,
-            @NonNull SetWithUpperBound<String> messages,
-            @NonNull ScheduledFuture<?> visibilityTimeoutExtender,
-            @NonNull ErrorHandlingStrategy<I> errorHandlingStrategy) {
-
-        this.worker = worker;
-        this.finishedMessageCallback = finishedMessageCallback;
-        this.messages = messages;
-        this.message = message;
-        this.visibilityTimeoutExtender = visibilityTimeoutExtender;
-        this.errorHandlingStrategy = errorHandlingStrategy;
-    }
 
     @Override
     public void run() {
-        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
-        Acknowledgement acknowledgment = message.getMessage().getHeaders().get("Acknowledgment",
-                Acknowledgement.class);
+        String messageId = message.getMessageId();
         try {
             log.info("starting processing of message " + messageId);
 
-            O outcome = worker.work(message.getMessage().getPayload(), message.getMessage().getHeaders());
+            I payload = message.getMessage().getPayload();
+            MessageHeaders headers = message.getMessage().getHeaders();
+            O outcome = worker.work(payload, headers);
 
-            finishedMessageCallback.call(message.getMessage().getPayload(), outcome);
-            acknowledge(messageId, acknowledgment);
+            finishedMessageCallback.call(payload, outcome);
+            acknowledge();
             log.info("message task successfully processed and message acknowledged: " + messageId);
         } catch (InterruptedException e) {
             log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
             errorHandlingStrategy.handleWorkerException(e, message);
-            acknowledge(messageId, acknowledgment);
+            acknowledge();
         } catch (Throwable t) {
             errorHandlingStrategy.handleWorkerThrowable(t, message);
-            acknowledge(messageId, acknowledgment);
+            acknowledge();
         } finally {
             visibilityTimeoutExtender.cancel(false);
             messages.remove(messageId);
         }
     }
 
-    private void acknowledge(String messageId, Acknowledgement acknowledgment) {
+    private void acknowledge() {
         try {
             try {
-                acknowledgment.acknowledgeAsync().get();
+                message.acknowledge();
             } catch (AwsServiceException e) {
                 errorHandlingStrategy.handleAcknowledgeMessageException(e, message);
             }
         } catch (Exception e) {
-            log.error("failure during acknowledge " + messageId, e);
+            log.error("failure during acknowledge " + message.getMessageId(), e);
         }
     }
 }

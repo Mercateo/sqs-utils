@@ -30,7 +30,6 @@ import java.time.Duration;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.messaging.Message;
 import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityResponse;
 
 @Slf4j
@@ -44,7 +43,7 @@ public class VisibilityTimeoutExtender implements Runnable {
 
     private final ErrorHandlingStrategy<?> errorHandlingStrategy;
 
-    private final Retryer<ChangeMessageVisibilityResponse> retryer;
+    private final Retryer<Void> retryer;
 
     VisibilityTimeoutExtender(@NonNull SqsAsyncClient sqsClient, @NonNull Duration newVisibilityTimeout,
             @NonNull MessageWrapper<?> message, @NonNull String queueUrl,
@@ -54,7 +53,7 @@ public class VisibilityTimeoutExtender implements Runnable {
         this.message = message;
         this.errorHandlingStrategy = errorHandlingStrategy;
         this.retryer = RetryerBuilder
-                .<ChangeMessageVisibilityResponse> newBuilder()
+                .<Void> newBuilder()
                 .retryIfException(t -> (t.getCause() instanceof UnknownHostException))
                 .withWaitStrategy(retryStrategy.getRetryWaitStrategy())
                 .withStopStrategy(retryStrategy.getRetryStopStrategy())
@@ -62,7 +61,7 @@ public class VisibilityTimeoutExtender implements Runnable {
 
         request = ChangeMessageVisibilityRequest.builder()
                 .queueUrl(queueUrl)
-                .receiptHandle(message.getMessage().getHeaders().get("ReceiptHandle", String.class))
+                .receiptHandle(message.getReceiptHandle())
                 .visibilityTimeout(timeoutInSeconds(newVisibilityTimeout))
                 .build();
     }
@@ -74,8 +73,10 @@ public class VisibilityTimeoutExtender implements Runnable {
     @Override
     public void run() {
         try {
-            log.trace("changing message visibility: " + request);
-            retryer.call(() -> sqsClient.changeMessageVisibility(request).get());
+            retryer.call(() -> {
+                message.changeMessageVisibility(sqsClient, request);
+                return null;
+            });
         } catch (AwsServiceException e) {
             errorHandlingStrategy.handleExtendVisibilityTimeoutException(e, message);
         } catch (Exception e) {

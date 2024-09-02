@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
@@ -37,12 +36,12 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 public class LongRunningMessageHandlerIntegrationTest {
 
-    private MessageHandlingRunnableFactory messageHandlingRunnableFactory = new MessageHandlingRunnableFactory();
+    private final MessageHandlingRunnableFactory messageHandlingRunnableFactory = new MessageHandlingRunnableFactory();
 
     @Mock
     private SqsAsyncClient sqsClient;
 
-    private MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
+    private final MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
 
     @Mock
     private FinishedMessageCallback<InputObject, String> finishedMessageCallback;
@@ -56,7 +55,7 @@ public class LongRunningMessageHandlerIntegrationTest {
     private LongRunningMessageHandler<InputObject, String> uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
         Map<QueueAttributeName, String> attributes = new HashMap<>();
         attributes.put(QueueAttributeName.VISIBILITY_TIMEOUT, "10");
@@ -76,7 +75,7 @@ public class LongRunningMessageHandlerIntegrationTest {
         String uuid = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
 
         // when
-        Thread thread = new Thread(() -> uut.handleMessage(message));
+        Thread thread = new Thread(() -> uut.handleMessage(message.getMessage()));
         thread.start();
 
         // then
@@ -93,12 +92,12 @@ public class LongRunningMessageHandlerIntegrationTest {
         List<String> uuids = List.of(String.valueOf(message1.getMessage().getHeaders().get("id", UUID.class)),
                 String.valueOf(message2.getMessage().getHeaders().get("id", UUID.class)));
 
-        Thread thread1 = new Thread(() -> uut.handleMessage(message1));
+        Thread thread1 = new Thread(() -> uut.handleMessage(message1.getMessage()));
         thread1.start();
         await().until(() -> !thread1.isAlive());
 
         // when
-        Thread thread2 = new Thread(() -> uut.handleMessage(message2));
+        Thread thread2 = new Thread(() -> uut.handleMessage(message2.getMessage()));
         thread2.start();
 
         // then
@@ -120,15 +119,15 @@ public class LongRunningMessageHandlerIntegrationTest {
                 String.valueOf(message3.getMessage().getHeaders().get("id", UUID.class)),
                 String.valueOf(message4.getMessage().getHeaders().get("id", UUID.class)));
 
-        new Thread(() -> uut.handleMessage(message1)).start();
-        new Thread(() -> uut.handleMessage(message2)).start();
+        new Thread(() -> uut.handleMessage(message1.getMessage())).start();
+        new Thread(() -> uut.handleMessage(message2.getMessage())).start();
         await().until(() -> message1.getMessage().getPayload().isRunning());
         await().until(() -> message2.getMessage().getPayload().isRunning());
 
         // when
-        Thread thread3 = new Thread(() -> uut.handleMessage(message3));
+        Thread thread3 = new Thread(() -> uut.handleMessage(message3.getMessage()));
         thread3.start();
-        Thread thread4 = new Thread(() -> uut.handleMessage(message4));
+        Thread thread4 = new Thread(() -> uut.handleMessage(message4.getMessage()));
         thread4.start();
 
         // then
@@ -157,16 +156,16 @@ public class LongRunningMessageHandlerIntegrationTest {
                 message4.getMessage().getHeaders().get("id", UUID.class).toString(),
                 message5.getMessage().getHeaders().get("id", UUID.class).toString());
 
-        new Thread(() -> uut.handleMessage(message1)).start();
-        new Thread(() -> uut.handleMessage(message2)).start();
+        new Thread(() -> uut.handleMessage(message1.getMessage())).start();
+        new Thread(() -> uut.handleMessage(message2.getMessage())).start();
         await().until(() -> message1.getMessage().getPayload().isRunning());
         await().until(() -> message2.getMessage().getPayload().isRunning());
 
-        Thread thread3 = new Thread(() -> uut.handleMessage(message3));
+        Thread thread3 = new Thread(() -> uut.handleMessage(message3.getMessage()));
         thread3.start();
-        Thread thread4 = new Thread(() -> uut.handleMessage(message4));
+        Thread thread4 = new Thread(() -> uut.handleMessage(message4.getMessage()));
         thread4.start();
-        Thread thread5 = new Thread(() -> uut.handleMessage(message5));
+        Thread thread5 = new Thread(() -> uut.handleMessage(message5.getMessage()));
         thread5.start();
 
         await().until(() -> Thread.State.WAITING == thread3.getState());
@@ -174,7 +173,7 @@ public class LongRunningMessageHandlerIntegrationTest {
         await().until(() -> Thread.State.WAITING == thread5.getState());
 
         // when
-        assertThatThrownBy(() -> uut.handleMessage(message6));
+        assertThatThrownBy(() -> uut.handleMessage(message6.getMessage()));
 
         // then
         assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly(uuids.toArray(String[]::new));
@@ -189,12 +188,12 @@ public class LongRunningMessageHandlerIntegrationTest {
         List<String> uuids = List.of(String.valueOf(message1.getMessage().getHeaders().get("id", UUID.class)),
                 String.valueOf(message3.getMessage().getHeaders().get("id", UUID.class)));
 
-        new Thread(() -> uut.handleMessage(message1)).start();
+        new Thread(() -> uut.handleMessage(message1.getMessage())).start();
         await().until(() -> message1.getMessage().getPayload().isRunning());
-        Thread thread2 = new Thread(() -> uut.handleMessage(message2));
+        Thread thread2 = new Thread(() -> uut.handleMessage(message2.getMessage()));
         thread2.start();
         await().until(() -> message2.getMessage().getPayload().isRunning());
-        Thread thread3 = new Thread(() -> uut.handleMessage(message3));
+        Thread thread3 = new Thread(() -> uut.handleMessage(message3.getMessage()));
         thread3.start();
 
         // when
@@ -214,11 +213,11 @@ public class LongRunningMessageHandlerIntegrationTest {
         MessageWrapper<InputObject> message2 = createMessage(2);
         List<String> uuids = List.of(String.valueOf(message2.getMessage().getHeaders().get("id", UUID.class)));
 
-        Thread thread1 = new Thread(() -> uut.handleMessage(message1));
+        Thread thread1 = new Thread(() -> uut.handleMessage(message1.getMessage()));
         thread1.start();
         await().until(() -> !thread1.isAlive());
 
-        Thread thread2 = new Thread(() -> uut.handleMessage(message2));
+        Thread thread2 = new Thread(() -> uut.handleMessage(message2.getMessage()));
         thread2.start();
         await().until(() -> Thread.State.WAITING == thread2.getState());
 
@@ -242,7 +241,7 @@ public class LongRunningMessageHandlerIntegrationTest {
     private class TestWorkerWithHeaders implements MessageWorkerWithHeaders<InputObject, String> {
 
         @Override
-        public String work(InputObject object, MessageHeaders messageHeaders) throws Exception {
+        public String work(InputObject object, MessageHeaders messageHeaders) {
 
             object.start();
             await().until(object::isFinished);

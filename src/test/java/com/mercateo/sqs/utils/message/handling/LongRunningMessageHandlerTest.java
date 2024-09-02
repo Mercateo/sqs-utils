@@ -69,7 +69,7 @@ public class LongRunningMessageHandlerTest {
         nullPointerTester.setDefault(VisibilityTimeoutExtenderFactory.class,
                 timeoutExtenderFactory);
         nullPointerTester.setDefault(Queue.class, queue);
-        
+
         // when
         nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
         nullPointerTester.testConstructors(uut.getClass(), Visibility.PACKAGE);
@@ -106,7 +106,7 @@ public class LongRunningMessageHandlerTest {
                 .thenThrow(exception);
 
         // when
-        assertThatThrownBy(() -> uut.handleMessage(message)).hasCause(exception);
+        assertThatThrownBy(() -> uut.handleMessage(message.getMessage())).hasCause(exception);
 
         // then
         assertThat(uut.getMessagesInProcessing().getBackingSet()).isEmpty();

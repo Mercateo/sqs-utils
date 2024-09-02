@@ -2,6 +2,7 @@ package com.mercateo.sqs.utils.message.handling;
 
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import lombok.Getter;
@@ -23,7 +24,7 @@ public class MessageWrapper<I> {
     private boolean acknowledged = false;
 
     public String getMessageId() {
-        return message.getHeaders().get("MessageId", String.class);
+        return String.valueOf(message.getHeaders().get("id", UUID.class));
     }
 
     public String getReceiptHandle() {

@@ -64,9 +64,11 @@ class MessageHandlingRunnableTest {
     }
 
     @Test
-    void testNullContracts() throws Exception {
+    void testNullContracts() {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
+        nullPointerTester.setDefault(MessageWrapper.class, message);
+        nullPointerTester.setDefault(SetWithUpperBound.class, messages);
 
         // when
         nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
