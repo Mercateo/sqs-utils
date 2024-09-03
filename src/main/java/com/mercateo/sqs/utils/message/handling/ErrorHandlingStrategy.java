@@ -15,7 +15,6 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import org.springframework.messaging.Message;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 public interface ErrorHandlingStrategy<I> {
@@ -63,7 +62,5 @@ public interface ErrorHandlingStrategy<I> {
      */
     
     void handleAcknowledgeMessageException(AwsServiceException e, MessageWrapper<I> message);
-
-
 
 }
