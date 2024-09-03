@@ -78,8 +78,7 @@ public class VisibilityTimeoutExtender implements Runnable {
         } catch (AwsServiceException e) {
             errorHandlingStrategy.handleExtendVisibilityTimeoutException(e, messageWrapper);
         } catch (Exception e) {
-            log.error("error while extending message visibility for " + messageWrapper.getMessage().getHeaders().get("MessageId",
-                    String.class), e);
+            log.error("error while extending message visibility for {}", messageWrapper.getMessageId(), e);
             throw new RuntimeException(e);
         }
     }
