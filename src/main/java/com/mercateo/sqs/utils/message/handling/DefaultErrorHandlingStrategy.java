@@ -16,12 +16,10 @@
 package com.mercateo.sqs.utils.message.handling;
 
 import java.util.Objects;
-import java.util.UUID;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.messaging.Message;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 @Slf4j
@@ -30,15 +28,14 @@ class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
     @Override
     @SneakyThrows
     public void handleWorkerException(Exception e, MessageWrapper<I> message) {
-        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
-        log.error("error while handling message " + messageId + ": " + message.getMessage().getPayload(), e);
+        log.error("error while handling message " + message.getMessageId() + ": " + message.getMessage().getPayload(), e);
         throw e;
     }
 
     @Override
     @SneakyThrows
     public void handleWorkerThrowable(Throwable t, MessageWrapper<I> message) {
-        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
+        String messageId = String.valueOf(message.getMessageId());
         log.error("error while handling message " + messageId + ": " + message.getMessage().getPayload(), t);
         throw t;
     }
@@ -48,8 +45,7 @@ class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
             MessageWrapper<?> message) {
 
         String msg = "error while extending message visibility for " + Objects.requireNonNull(
-                message.getMessage().getHeaders().get("id",
-                        UUID.class));
+                message.getMessageId());
         log.error(msg, e);
         throw e;
 
@@ -57,7 +53,7 @@ class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
 
     @Override
     public void handleAcknowledgeMessageException(AwsServiceException e, MessageWrapper<I> message) {
-        String messageId = String.valueOf(message.getMessage().getHeaders().get("id", UUID.class));
+        String messageId = message.getMessageId();
         log.error("could not acknowledge " + messageId, e);
     }
 
