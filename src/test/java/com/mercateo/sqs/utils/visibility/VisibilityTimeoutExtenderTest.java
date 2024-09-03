@@ -18,7 +18,6 @@ import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +43,7 @@ class VisibilityTimeoutExtenderTest {
     private ErrorHandlingStrategy<?> errorHandlingStrategy;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         HashMap<String, Object> headerMap = new HashMap<>();
         headerMap.put("ReceiptHandle", "rhd");
@@ -57,7 +56,7 @@ class VisibilityTimeoutExtenderTest {
     }
 
     @Test
-    void testNullContracts() throws Exception {
+    void testNullContracts() {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
 
@@ -67,7 +66,7 @@ class VisibilityTimeoutExtenderTest {
     }
 
     @Test
-    void testRun() throws ExecutionException, InterruptedException {
+    void testRun() {
         // given
         CompletableFuture<ChangeMessageVisibilityResponse> future = new CompletableFuture<>();
         future.complete(ChangeMessageVisibilityResponse.builder().build());
@@ -77,8 +76,8 @@ class VisibilityTimeoutExtenderTest {
         uut.run();
 
         // then
-        ArgumentCaptor<software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest> captor = ArgumentCaptor.forClass(
-                software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest.class);
+        ArgumentCaptor<ChangeMessageVisibilityRequest> captor = ArgumentCaptor.forClass(
+                ChangeMessageVisibilityRequest.class);
         verify(sqsClient).changeMessageVisibility(captor.capture());
         ChangeMessageVisibilityRequest request = captor.getValue();
 

@@ -1,6 +1,6 @@
 package com.mercateo.sqs.utils.queue;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -25,13 +25,13 @@ public class QueueFactoryTest {
     private QueueFactory uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         uut = new QueueFactory(amazonSQS);
     }
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts() throws Exception {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
 
@@ -41,7 +41,7 @@ public class QueueFactoryTest {
     }
 
     @Test
-    public void testGet() {
+    void testGet() {
         // given
         QueueName qn = new QueueName("q1");
         GetQueueUrlResponse queueUrlResult = mock(GetQueueUrlResponse.class);
@@ -65,9 +65,8 @@ public class QueueFactoryTest {
         Queue queue = uut.get(qn);
 
         // then
-        assertEquals("url1", queue.getUrl());
-        assertEquals("q1", queue.getName().getId());
-        assertEquals(attributes, queue.getQueueAttributes());
-
+        assertThat(queue.getUrl()).isEqualTo("url1");
+        assertThat(queue.getName().getId()).isEqualTo("q1");
+        assertThat(queue.getQueueAttributes()).isEqualTo(attributes);
     }
 }

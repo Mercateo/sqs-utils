@@ -23,7 +23,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -53,7 +52,7 @@ public class LongRunningMessageHandlerTest {
     private LongRunningMessageHandler<Integer, String> uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         when(queue.getName()).thenReturn(new QueueName("queuename"));
         when(queue.getDefaultVisibilityTimeout()).thenReturn(Duration.ofSeconds(120));
@@ -63,7 +62,7 @@ public class LongRunningMessageHandlerTest {
     }
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts() {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
         nullPointerTester.setDefault(VisibilityTimeoutExtenderFactory.class,
@@ -75,7 +74,8 @@ public class LongRunningMessageHandlerTest {
         nullPointerTester.testConstructors(uut.getClass(), Visibility.PACKAGE);
     }
 
-    public void timeUntilTimeOutExtensionTooLarge() throws Exception {
+    @Test
+    void timeUntilTimeOutExtensionTooLarge(){
 
         // when
         Throwable result = catchThrowable(() -> uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
@@ -86,7 +86,8 @@ public class LongRunningMessageHandlerTest {
         assertThat(result).isInstanceOf(IllegalStateException.class);
     }
 
-    public void timeUntilTimeOutNegative() throws Exception {
+    @Test
+    void timeUntilTimeOutNegative(){
 
         // when
         Throwable result = catchThrowable(() -> uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
@@ -98,7 +99,7 @@ public class LongRunningMessageHandlerTest {
     }
 
     @Test
-    public void testHandleMessage_handlesExceptionDuringTimeoutExtension() {
+    void testHandleMessage_handlesExceptionDuringTimeoutExtension() {
         // given
         MessageWrapper<Integer> message = createMessage();
         RuntimeException exception = new RuntimeException("test exception");
@@ -114,8 +115,8 @@ public class LongRunningMessageHandlerTest {
 
     private MessageWrapper<Integer> createMessage() {
         Map<String, Object> headers = new HashMap<>();
-        String uuid = UUID.fromString("bf308aa2-bf48-49b8-a839-61611c710430").toString();
-        headers.put("id", uuid);
+        String messageId = UUID.fromString("bf308aa2-bf48-49b8-a839-61611c710430").toString();
+        headers.put("id", messageId);
 
         MessageHeaders messageHeaders = new MessageHeaders(headers);
         return new MessageWrapper<>(new GenericMessage<>(1, messageHeaders));

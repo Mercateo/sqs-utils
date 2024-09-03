@@ -1,6 +1,6 @@
 package com.mercateo.sqs.utils.queue;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.testing.NullPointerTester;
 
@@ -22,13 +22,13 @@ public class QueueTest {
     private Queue uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         uut = new Queue(new QueueName("123"), "http://url.de", queueAttributes);
     }
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts() throws Exception {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
         nullPointerTester.ignore(uut.getClass().getDeclaredMethod("canEqual", Object.class));
@@ -41,7 +41,7 @@ public class QueueTest {
     }
 
     @Test
-    public void testGetDefaultVisibilityTimeout() {
+    void testGetDefaultVisibilityTimeout() {
         // given
         Mockito.when(queueAttributes.get(QueueAttributeName.VISIBILITY_TIMEOUT)).thenReturn("734");
 
@@ -49,6 +49,6 @@ public class QueueTest {
         Duration defaultVisibilityTimeout = uut.getDefaultVisibilityTimeout();
 
         // then
-        assertEquals(734, defaultVisibilityTimeout.getSeconds());
+        assertThat(defaultVisibilityTimeout.getSeconds()).isEqualTo(734);
     }
 }

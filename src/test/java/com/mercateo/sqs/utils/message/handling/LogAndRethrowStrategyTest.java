@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -28,7 +27,7 @@ public class LogAndRethrowStrategyTest {
     }
 
     @Test
-    public void handle_throws_exception() {
+    void handle_throws_exception() {
         // Given
         Exception e = new IllegalArgumentException();
         MessageWrapper<Integer> message = createMessage();
@@ -38,7 +37,6 @@ public class LogAndRethrowStrategyTest {
 
         // Then
         assertThat(throwable).isInstanceOf(IllegalArgumentException.class);
-
     }
 
     private MessageWrapper<Integer> createMessage() {

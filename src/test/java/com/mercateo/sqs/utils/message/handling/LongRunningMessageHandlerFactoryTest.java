@@ -1,6 +1,6 @@
 package com.mercateo.sqs.utils.message.handling;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.testing.NullPointerTester;
 import com.mercateo.sqs.utils.queue.QueueFactory;
@@ -26,14 +26,14 @@ public class LongRunningMessageHandlerFactoryTest {
     private LongRunningMessageHandlerFactory uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         uut = new LongRunningMessageHandlerFactory(messageHandlingRunnableFactory,
                 timeoutExtenderFactory, queueFactory);
     }
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts() {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
         nullPointerTester.setDefault(QueueName.class, new QueueName("name"));
@@ -48,15 +48,14 @@ public class LongRunningMessageHandlerFactoryTest {
     }
 
     @Test
-    public void testConstructor_extractsTheCorrectMessageBatchSize() {
+    void testConstructor_extractsTheCorrectMessageBatchSize() {
         // given
+        int expectedBatchSize = 8;
 
         // when
-        uut = new LongRunningMessageHandlerFactory(messageHandlingRunnableFactory,
-                timeoutExtenderFactory, queueFactory);
-        uut.setMaxConcurrentMessages(12);
+        uut.setMaxConcurrentMessages(8);
 
         // then
-        assertEquals(12, uut.maxNumberOfMessagesPerBatch);
+        assertThat(uut.getMaxConcurrentMessages()).isEqualTo(expectedBatchSize);
     }
 }
