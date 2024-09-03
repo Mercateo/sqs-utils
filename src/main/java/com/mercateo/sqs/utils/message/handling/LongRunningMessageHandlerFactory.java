@@ -43,7 +43,7 @@ public class LongRunningMessageHandlerFactory {
     private final ScheduledExecutorService executorService;
 
     // visible for testing
-    int maxNumberOfMessagesPerBatch;
+    private int maxNumberOfMessagesPerBatch;
 
     @Inject
     public LongRunningMessageHandlerFactory(
@@ -74,6 +74,10 @@ public class LongRunningMessageHandlerFactory {
 
     public void setMaxConcurrentMessages(Integer maxConcurrentMessages) {
         this.maxNumberOfMessagesPerBatch = maxConcurrentMessages;
+    }
+
+    public int getMaxConcurrentMessages() {
+        return this.maxNumberOfMessagesPerBatch;
     }
 
     /**
