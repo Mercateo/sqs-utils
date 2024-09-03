@@ -1,11 +1,10 @@
 /**
- *
  * Copyright © 2017 Mercateo AG (http://www.mercateo.com)
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * <p>
- *  http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -75,11 +74,9 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
     private void acknowledge() {
         try {
-            try {
-                messageWrapper.acknowledge();
-            } catch (AwsServiceException e) {
-                errorHandlingStrategy.handleAcknowledgeMessageException(e, messageWrapper);
-            }
+            messageWrapper.acknowledge();
+        } catch (AwsServiceException e) {
+            errorHandlingStrategy.handleAcknowledgeMessageException(e, messageWrapper);
         } catch (Exception e) {
             log.error("failure during acknowledge " + messageWrapper.getMessageId(), e);
         }
