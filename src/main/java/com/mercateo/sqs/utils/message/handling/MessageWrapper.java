@@ -1,10 +1,11 @@
 package com.mercateo.sqs.utils.message.handling;
 
-import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
+import io.awspring.cloud.sqs.MessagingHeaders;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import io.awspring.cloud.sqs.listener.acknowledgement.AcknowledgementCallback;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -33,12 +34,17 @@ public class MessageWrapper<I> {
 
     @SneakyThrows
     public synchronized void acknowledge() {
-        Acknowledgement acknowledgment = message.getHeaders().get("Acknowledgment", Acknowledgement.class);
-        if (acknowledgment == null) {
-            throw new NullPointerException("there is no \"Acknowledgment\" in the message headers");
+        AcknowledgementCallback<I> acknowledgementCallback = message.getHeaders().get(
+                MessagingHeaders.ACKNOWLEDGMENT_CALLBACK_HEADER, AcknowledgementCallback.class);
+        if (acknowledgementCallback == null) {
+            throw new NullPointerException("There is no \"AcknowledgementCallback\" in the message headers");
         }
-        acknowledgment.acknowledgeAsync().get(2, TimeUnit.MINUTES);
-        acknowledged = true;
+        try {
+            acknowledgementCallback.onAcknowledge(message).get(2, TimeUnit.MINUTES);
+            acknowledged = true;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to acknowledge message", e);
+        }
     }
 
     @SneakyThrows

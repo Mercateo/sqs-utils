@@ -15,6 +15,7 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.mercateo.sqs.utils.queue.Queue;
 import com.mercateo.sqs.utils.queue.QueueFactory;
 import com.mercateo.sqs.utils.queue.QueueName;
@@ -42,7 +43,6 @@ public class LongRunningMessageHandlerFactory {
 
     private final ScheduledExecutorService executorService;
 
-    // visible for testing
     private int maxNumberOfMessagesPerBatch;
 
     @Inject
@@ -76,7 +76,8 @@ public class LongRunningMessageHandlerFactory {
         this.maxNumberOfMessagesPerBatch = maxConcurrentMessages;
     }
 
-    public int getMaxConcurrentMessages() {
+    @VisibleForTesting
+    int getMaxConcurrentMessages() {
         return this.maxNumberOfMessagesPerBatch;
     }
 

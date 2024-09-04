@@ -10,12 +10,13 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.testing.NullPointerTester;
 
-import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 
+import io.awspring.cloud.sqs.MessagingHeaders;
+import io.awspring.cloud.sqs.listener.acknowledgement.AcknowledgementCallback;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -30,7 +31,7 @@ class MessageHandlingRunnableTest {
     private MessageWorkerWithHeaders<Integer, String> worker;
 
     @Mock
-    private Acknowledgement acknowledgment;
+    private AcknowledgementCallback<Integer> acknowledgment;
 
     private MessageWrapper<Integer> message;
 
@@ -51,11 +52,11 @@ class MessageHandlingRunnableTest {
     private MessageHandlingRunnable<Integer, String> uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
         HashMap<String, Object> headerMap = new HashMap<>();
-        headerMap.put("MessageId", "bf308aa2-bf48-49b8-a839-61611c710431");
-        headerMap.put("Acknowledgment", acknowledgment);
+        headerMap.put("id", "bf308aa2-bf48-49b8-a839-61611c710431");
+        headerMap.put(MessagingHeaders.ACKNOWLEDGMENT_CALLBACK_HEADER, acknowledgment);
         message = new MessageWrapper<>(new GenericMessage<>(3, new MessageHeaders(headerMap)));
         messageGeneratedUUID = message.getMessage().getHeaders().getId();
         uut = new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messages,
@@ -79,14 +80,15 @@ class MessageHandlingRunnableTest {
     void testRun() throws Throwable {
         // given
         when(worker.work(3, message.getMessage().getHeaders())).thenReturn("3S");
-        when(acknowledgment.acknowledgeAsync()).thenReturn(mock(CompletableFuture.class));
+        when(acknowledgment.onAcknowledge(message.getMessage()))
+                .thenReturn(mock(CompletableFuture.class));
 
         // when
         uut.run();
 
         // then
         verify(finishedMessageCallback).call(3, "3S");
-        verify(acknowledgment).acknowledgeAsync();
+        verify(acknowledgment).onAcknowledge(message.getMessage());
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove(messageGeneratedUUID.toString());
     }
@@ -116,14 +118,15 @@ class MessageHandlingRunnableTest {
         // given
         Exception e = new IllegalArgumentException();
         doThrow(e).when(worker).work(3, message.getMessage().getHeaders());
-        when(acknowledgment.acknowledgeAsync()).thenReturn(mock(CompletableFuture.class));
+        when(acknowledgment.onAcknowledge(message.getMessage()))
+                .thenReturn(mock(CompletableFuture.class));
 
         // when
         uut.run();
 
         // then
         verify(errorHandlingStrategy).handleWorkerException(e, message);
-        verify(acknowledgment).acknowledgeAsync();
+        verify(acknowledgment).onAcknowledge(message.getMessage());
         verify(visibilityTimeoutExtender).cancel(false);
         verify(messages).remove(messageGeneratedUUID.toString());
     }
