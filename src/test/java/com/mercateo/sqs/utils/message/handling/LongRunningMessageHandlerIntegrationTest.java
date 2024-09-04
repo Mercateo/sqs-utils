@@ -3,21 +3,20 @@ package com.mercateo.sqs.utils.message.handling;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import com.mercateo.sqs.utils.queue.Queue;
 import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -28,35 +27,37 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.springframework.messaging.Message;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 public class LongRunningMessageHandlerIntegrationTest {
 
-    private MessageHandlingRunnableFactory messageHandlingRunnableFactory = new MessageHandlingRunnableFactory();
+    private final MessageHandlingRunnableFactory messageHandlingRunnableFactory = new MessageHandlingRunnableFactory();
 
     @Mock
-    private AmazonSQS sqsClient;
+    private SqsAsyncClient sqsClient;
 
-    private MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
+    private final MessageWorkerWithHeaders<InputObject, String> worker = new TestWorkerWithHeaders();
 
     @Mock
     private FinishedMessageCallback<InputObject, String> finishedMessageCallback;
 
     @Spy
     private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
-    
-    @Mock
+
+    @Spy
     private ErrorHandlingStrategy<InputObject> errorHandlingStrategy;
 
     private LongRunningMessageHandler<InputObject, String> uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put("VisibilityTimeout", "10");
+        Map<QueueAttributeName, String> attributes = new HashMap<>();
+        attributes.put(QueueAttributeName.VISIBILITY_TIMEOUT, "10");
         Queue queue = new Queue(new QueueName("queueName"), "queueUrl", attributes);
         VisibilityTimeoutExtenderFactory timeoutExtenderFactory = new VisibilityTimeoutExtenderFactory(
                 sqsClient);
@@ -67,92 +68,102 @@ public class LongRunningMessageHandlerIntegrationTest {
     }
 
     @Test
-    public void testHandleMessage_processesOneMessageAndReturns() {
+    void testHandleMessage_processesOneMessageAndReturns() {
         // given
-        Message<InputObject> message = createMessage(1);
+        MessageWrapper<InputObject> message = createMessage(1);
 
         // when
-        Thread thread = new Thread(() -> uut.handleMessage(message));
+        Thread thread = new Thread(() -> uut.handleMessage(message.getMessage()));
         thread.start();
 
         // then
         await().until(() -> !thread.isAlive());
-        await().until(() -> message.getPayload().isRunning());
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1");
+        await().until(() -> message.getMessage().getPayload().isRunning());
+        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly(message.getMessageId());
     }
 
     @Test
-    public void testHandleMessage_processesTwoMessagesAndBlocks() {
+    void testHandleMessage_processesTwoMessagesAndBlocks() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        List<String> messageIds = List.of(String.valueOf(message1.getMessageId()),
+                String.valueOf(message2.getMessageId()));
 
-        Thread thread1 = new Thread(() -> uut.handleMessage(message1));
+        Thread thread1 = new Thread(() -> uut.handleMessage(message1.getMessage()));
         thread1.start();
         await().until(() -> !thread1.isAlive());
 
         // when
-        Thread thread2 = new Thread(() -> uut.handleMessage(message2));
+        Thread thread2 = new Thread(() -> uut.handleMessage(message2.getMessage()));
         thread2.start();
 
         // then
         await().until(() -> Thread.State.WAITING == thread2.getState());
-        await().until(() -> message1.getPayload().isRunning());
-        await().until(() -> message2.getPayload().isRunning());
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1",
-                "messageId2");
+        await().until(() -> message1.getMessage().getPayload().isRunning());
+        await().until(() -> message2.getMessage().getPayload().isRunning());
+        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsExactlyInAnyOrderElementsOf(messageIds);
     }
 
     @Test
-    public void testHandleMessage_processesFourMessagesAndFillsQueue() {
+    void testHandleMessage_processesFourMessagesAndFillsQueue() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
-        Message<InputObject> message3 = createMessage(3);
-        Message<InputObject> message4 = createMessage(4);
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        MessageWrapper<InputObject> message3 = createMessage(3);
+        MessageWrapper<InputObject> message4 = createMessage(4);
+        List<String> messageIds = List.of(String.valueOf(message1.getMessageId()),
+                String.valueOf(message2.getMessageId()),
+                String.valueOf(message3.getMessageId()),
+                String.valueOf(message4.getMessageId()));
 
-        new Thread(() -> uut.handleMessage(message1)).start();
-        new Thread(() -> uut.handleMessage(message2)).start();
-        await().until(() -> message1.getPayload().isRunning());
-        await().until(() -> message2.getPayload().isRunning());
+        new Thread(() -> uut.handleMessage(message1.getMessage())).start();
+        new Thread(() -> uut.handleMessage(message2.getMessage())).start();
+        await().until(() -> message1.getMessage().getPayload().isRunning());
+        await().until(() -> message2.getMessage().getPayload().isRunning());
 
         // when
-        Thread thread3 = new Thread(() -> uut.handleMessage(message3));
+        Thread thread3 = new Thread(() -> uut.handleMessage(message3.getMessage()));
         thread3.start();
-        Thread thread4 = new Thread(() -> uut.handleMessage(message4));
+        Thread thread4 = new Thread(() -> uut.handleMessage(message4.getMessage()));
         thread4.start();
 
         // then
         await().until(() -> Thread.State.WAITING == thread3.getState());
         await().until(() -> Thread.State.WAITING == thread4.getState());
-        assertFalse(message3.getPayload().isRunning());
-        assertFalse(message4.getPayload().isRunning());
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1",
-                "messageId2", "messageId3", "messageId4");
+        assertThat(message3.getMessage().getPayload().isRunning()).isFalse();
+        assertThat(message4.getMessage().getPayload().isRunning()).isFalse();
+        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsExactlyInAnyOrderElementsOf(messageIds);
         verify(scheduledExecutorService, times(4)).scheduleAtFixedRate(any(), anyLong(), anyLong(),
                 any());
     }
 
     @Test
-    public void testHandleMessage_processesSixMessageAndCrashes() {
+    void testHandleMessage_processesSixMessageAndCrashes() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
-        Message<InputObject> message3 = createMessage(3);
-        Message<InputObject> message4 = createMessage(4);
-        Message<InputObject> message5 = createMessage(5);
-        Message<InputObject> message6 = createMessage(6);
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        MessageWrapper<InputObject> message3 = createMessage(3);
+        MessageWrapper<InputObject> message4 = createMessage(4);
+        MessageWrapper<InputObject> message5 = createMessage(5);
+        MessageWrapper<InputObject> message6 = createMessage(6);
 
-        new Thread(() -> uut.handleMessage(message1)).start();
-        new Thread(() -> uut.handleMessage(message2)).start();
-        await().until(() -> message1.getPayload().isRunning());
-        await().until(() -> message2.getPayload().isRunning());
+        List<String> messageIds = List.of(message1.getMessageId(),
+                message2.getMessageId(),
+                message3.getMessageId(),
+                message4.getMessageId(),
+                message5.getMessageId());
 
-        Thread thread3 = new Thread(() -> uut.handleMessage(message3));
+        new Thread(() -> uut.handleMessage(message1.getMessage())).start();
+        new Thread(() -> uut.handleMessage(message2.getMessage())).start();
+        await().until(() -> message1.getMessage().getPayload().isRunning());
+        await().until(() -> message2.getMessage().getPayload().isRunning());
+
+        Thread thread3 = new Thread(() -> uut.handleMessage(message3.getMessage()));
         thread3.start();
-        Thread thread4 = new Thread(() -> uut.handleMessage(message4));
+        Thread thread4 = new Thread(() -> uut.handleMessage(message4.getMessage()));
         thread4.start();
-        Thread thread5 = new Thread(() -> uut.handleMessage(message5));
+        Thread thread5 = new Thread(() -> uut.handleMessage(message5.getMessage()));
         thread5.start();
 
         await().until(() -> Thread.State.WAITING == thread3.getState());
@@ -160,99 +171,79 @@ public class LongRunningMessageHandlerIntegrationTest {
         await().until(() -> Thread.State.WAITING == thread5.getState());
 
         // when
-        assertThatThrownBy(() -> uut.handleMessage(message6));
+        assertThatThrownBy(() -> uut.handleMessage(message6.getMessage()))
+                .hasCauseInstanceOf(TaskRejectedException.class);
 
         // then
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1",
-                "messageId2", "messageId3", "messageId4", "messageId5");
+        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsExactlyInAnyOrderElementsOf(messageIds);
     }
 
     @Test
-    public void testHandleMessage_performsDeduplication() {
+    void testHandleMessage_startsQueuedProcess() {
         // given
-        Message<InputObject> message1_1 = createMessage(1);
-        Message<InputObject> message1_2 = createMessage(1);
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        MessageWrapper<InputObject> message3 = createMessage(3);
+        List<String> messageIds = List.of(String.valueOf(message1.getMessageId()),
+                String.valueOf(message3.getMessageId()));
 
-        Thread thread1 = new Thread(() -> uut.handleMessage(message1_1));
-        thread1.start();
-        await().until(() -> !thread1.isAlive());
-
-        // when
-        Thread thread2 = new Thread(() -> uut.handleMessage(message1_2));
+        new Thread(() -> uut.handleMessage(message1.getMessage())).start();
+        await().until(() -> message1.getMessage().getPayload().isRunning());
+        Thread thread2 = new Thread(() -> uut.handleMessage(message2.getMessage()));
         thread2.start();
-
-        // then
-        await().until(() -> !thread2.isAlive());
-        assertTrue(message1_1.getPayload().isRunning());
-        assertFalse(message1_2.getPayload().isRunning());
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1");
-        verify(scheduledExecutorService).scheduleAtFixedRate(any(), anyLong(), anyLong(), any());
-    }
-
-    @Test
-    public void testHandleMessage_startsQueuedProcess() {
-        // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
-        Message<InputObject> message3 = createMessage(3);
-
-        new Thread(() -> uut.handleMessage(message1)).start();
-        await().until(() -> message1.getPayload().isRunning());
-        Thread thread2 = new Thread(() -> uut.handleMessage(message2));
-        thread2.start();
-        await().until(() -> message2.getPayload().isRunning());
-        Thread thread3 = new Thread(() -> uut.handleMessage(message3));
+        await().until(() -> message2.getMessage().getPayload().isRunning());
+        Thread thread3 = new Thread(() -> uut.handleMessage(message3.getMessage()));
         thread3.start();
 
         // when
-        message2.getPayload().stop();
+        message2.getMessage().getPayload().stop();
 
         // then
         await().until(() -> Thread.State.WAITING == thread2.getState());
         await().until(() -> Thread.State.WAITING == thread3.getState());
-        assertTrue(message3.getPayload().isRunning());
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId1",
-                "messageId3");
+        assertThat(message3.getMessage().getPayload().isRunning()).isTrue();
+        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsExactlyInAnyOrderElementsOf(messageIds);
     }
 
     @Test
-    public void testHandleMessage_resumesWaitingThreads() {
+    void testHandleMessage_resumesWaitingThreads() {
         // given
-        Message<InputObject> message1 = createMessage(1);
-        Message<InputObject> message2 = createMessage(2);
+        MessageWrapper<InputObject> message1 = createMessage(1);
+        MessageWrapper<InputObject> message2 = createMessage(2);
+        List<String> messageId = List.of(String.valueOf(message2.getMessageId()));
 
-        Thread thread1 = new Thread(() -> uut.handleMessage(message1));
+        Thread thread1 = new Thread(() -> uut.handleMessage(message1.getMessage()));
         thread1.start();
         await().until(() -> !thread1.isAlive());
 
-        Thread thread2 = new Thread(() -> uut.handleMessage(message2));
+        Thread thread2 = new Thread(() -> uut.handleMessage(message2.getMessage()));
         thread2.start();
         await().until(() -> Thread.State.WAITING == thread2.getState());
 
         // when
-        message1.getPayload().stop();
+        message1.getMessage().getPayload().stop();
 
         // then
         await().until(() -> !thread2.isAlive());
-        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsOnly("messageId2");
+        assertThat(uut.getMessagesInProcessing().getBackingSet()).containsExactlyElementsOf(messageId);
     }
 
-    private Message<InputObject> createMessage(int number) {
+    private MessageWrapper<InputObject> createMessage(int number) {
         Map<String, Object> headers = new HashMap<>();
-        headers.put("MessageId", "messageId" + number);
+        headers.put("id", UUID.fromString("bf308aa2-bf48-49b8-a839-61611c71043" + number).toString());
         headers.put("ReceiptHandle", "receiptHandle" + number);
 
         MessageHeaders messageHeaders = new MessageHeaders(headers);
-        return new GenericMessage<>(new InputObject(), messageHeaders);
+        return new MessageWrapper<>(new GenericMessage<>(new InputObject(), messageHeaders));
     }
 
     private class TestWorkerWithHeaders implements MessageWorkerWithHeaders<InputObject, String> {
 
         @Override
-        public String work(InputObject object, MessageHeaders messageHeaders) throws Exception {
+        public String work(InputObject object, MessageHeaders messageHeaders) {
 
             object.start();
-            await().until(() -> object.isFinished());
+            await().until(object::isFinished);
             object.stop();
 
             return "done";

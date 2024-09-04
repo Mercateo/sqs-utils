@@ -1,13 +1,11 @@
 package com.mercateo.sqs.utils.message.handling;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.testing.NullPointerTester;
 import com.mercateo.sqs.utils.queue.QueueFactory;
 import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
-
-import io.awspring.cloud.messaging.listener.SimpleMessageListenerContainer;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,21 +26,21 @@ public class LongRunningMessageHandlerFactoryTest {
     private LongRunningMessageHandlerFactory uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
-        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
         uut = new LongRunningMessageHandlerFactory(messageHandlingRunnableFactory,
-                timeoutExtenderFactory, queueFactory, simpleMessageListenerContainer);
+                timeoutExtenderFactory, queueFactory);
     }
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts() {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
         nullPointerTester.setDefault(QueueName.class, new QueueName("name"));
         nullPointerTester.setDefault(VisibilityTimeoutExtenderFactory.class,
                 timeoutExtenderFactory);
         nullPointerTester.setDefault(QueueFactory.class, queueFactory);
+        nullPointerTester.setDefault(Integer.class, 10);
 
         // when
         nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
@@ -50,16 +48,14 @@ public class LongRunningMessageHandlerFactoryTest {
     }
 
     @Test
-    public void testConstructor_extractsTheCorrectMessageBatchSize() {
+    void testConstructor_extractsTheCorrectMessageBatchSize() {
         // given
-        SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
-        simpleMessageListenerContainer.setMaxNumberOfMessages(2);
+        int expectedBatchSize = 8;
 
         // when
-        uut = new LongRunningMessageHandlerFactory(messageHandlingRunnableFactory,
-                timeoutExtenderFactory, queueFactory, simpleMessageListenerContainer);
+        uut.setMaxConcurrentMessages(8);
 
         // then
-        assertEquals(2, uut.maxNumberOfMessagesPerBatch);
+        assertThat(uut.getMaxConcurrentMessages()).isEqualTo(expectedBatchSize);
     }
 }

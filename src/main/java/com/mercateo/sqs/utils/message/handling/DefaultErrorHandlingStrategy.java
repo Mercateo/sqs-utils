@@ -15,46 +15,45 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import com.amazonaws.AmazonServiceException;
+import java.util.Objects;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.messaging.Message;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 @Slf4j
 class DefaultErrorHandlingStrategy<I> implements ErrorHandlingStrategy<I> {
 
     @Override
     @SneakyThrows
-    public void handleWorkerException(Exception e, Message<I> message) {
-        String messageId = message.getHeaders().get("MessageId", String.class);
-        log.error("error while handling message " + messageId + ": " + message.getPayload(), e);
+    public void handleWorkerException(Exception e, MessageWrapper<I> message) {
+        log.error("error while handling message " + message.getMessageId() + ": " + message.getMessage().getPayload(), e);
         throw e;
     }
 
     @Override
     @SneakyThrows
-    public void handleWorkerThrowable(Throwable t, Message<I> message) {
-        String messageId = message.getHeaders().get("MessageId", String.class);
-        log.error("error while handling message " + messageId + ": " + message.getPayload(), t);
+    public void handleWorkerThrowable(Throwable t, MessageWrapper<I> message) {
+        String messageId = String.valueOf(message.getMessageId());
+        log.error("error while handling message " + messageId + ": " + message.getMessage().getPayload(), t);
         throw t;
     }
 
     @Override
-    public void handleExtendVisibilityTimeoutException(AmazonServiceException e,
-            Message<?> message) {
+    public void handleExtendVisibilityTimeoutException(AwsServiceException e,
+            MessageWrapper<?> message) {
 
-        String msg = "error while extending message visibility for " + message.getHeaders().get("MessageId",
-                String.class);
+        String msg = "error while extending message visibility for " + Objects.requireNonNull(
+                message.getMessageId());
         log.error(msg, e);
         throw e;
 
     }
 
     @Override
-    public void handleAcknowledgeMessageException(AmazonServiceException e, Message<I> message) {
-        String messageId = message.getHeaders().get("MessageId", String.class);
+    public void handleAcknowledgeMessageException(AwsServiceException e, MessageWrapper<I> message) {
+        String messageId = message.getMessageId();
         log.error("could not acknowledge " + messageId, e);
     }
 

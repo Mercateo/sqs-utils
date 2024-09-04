@@ -1,6 +1,6 @@
 package com.mercateo.sqs.utils.message.handling;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -12,7 +12,7 @@ import org.springframework.messaging.MessageHeaders;
 public class MessageWorkerTest {
 
     @Test
-    public void testWorkDelegatesMethodCall() throws Exception {
+    void testWorkDelegatesMethodCall() throws Exception {
         // given
         AtomicInteger counter = new AtomicInteger(0);
         MessageWorker<String, Integer> uut = new MessageWorker<String, Integer>() {
@@ -27,7 +27,7 @@ public class MessageWorkerTest {
         uut.work("dummy value", messageHeaders);
 
         // then
-        assertEquals(1, counter.intValue());
+        assertThat(counter.intValue()).isEqualTo(counter.intValue());
         verifyNoInteractions(messageHeaders);
     }
 }

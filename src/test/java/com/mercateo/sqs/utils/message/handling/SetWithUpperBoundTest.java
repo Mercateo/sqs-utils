@@ -1,7 +1,6 @@
 package com.mercateo.sqs.utils.message.handling;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.testing.NullPointerTester;
 
@@ -14,7 +13,7 @@ import org.junit.jupiter.api.Test;
 public class SetWithUpperBoundTest {
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts(){
         // given
         SetWithUpperBound<Integer> uut = new SetWithUpperBound<>(4);
         NullPointerTester nullPointerTester = new NullPointerTester();
@@ -25,7 +24,7 @@ public class SetWithUpperBoundTest {
     }
 
     @Test
-    public void testContains_contains() {
+    void testContains_contains() {
         // given
         SetWithUpperBound<String> setWithUpperBound = new SetWithUpperBound<>(2);
         setWithUpperBound.add("1");
@@ -35,11 +34,11 @@ public class SetWithUpperBoundTest {
         boolean contains = setWithUpperBound.contains("2");
 
         // then
-        assertTrue(contains);
+        assertThat(contains).isTrue();
     }
 
     @Test
-    public void testContains_doesNotContain() {
+    void testContains_doesNotContain() {
         // given
         SetWithUpperBound<String> setWithUpperBound = new SetWithUpperBound<>(2);
         setWithUpperBound.add("1");
@@ -49,11 +48,11 @@ public class SetWithUpperBoundTest {
         boolean contains = setWithUpperBound.contains("3");
 
         // then
-        assertFalse(contains);
+        assertThat(contains).isFalse();
     }
 
     @Test
-    public void testRemove() {
+    void testRemove() {
         // given
         SetWithUpperBound<String> setWithUpperBound = new SetWithUpperBound<>(2);
         setWithUpperBound.add("1");
@@ -63,11 +62,11 @@ public class SetWithUpperBoundTest {
         setWithUpperBound.remove("2");
 
         // then
-        assertFalse(setWithUpperBound.contains("2"));
+        assertThat(setWithUpperBound.contains("2")).isFalse();
     }
 
     @Test
-    public void testWaitUntilAtLeastOneFree_notifyAndWaitWorking() throws InterruptedException {
+    void testWaitUntilAtLeastOneFree_notifyAndWaitWorking() throws InterruptedException {
         // given
         CountDownLatch waitingThreads = new CountDownLatch(2);
         CountDownLatch waitingThreadsToBeStarted = new CountDownLatch(2);
@@ -98,6 +97,6 @@ public class SetWithUpperBoundTest {
         }).start();
 
         // then
-        assertTrue(waitingThreads.await(100, TimeUnit.MILLISECONDS));
+        assertThat(waitingThreads.await(100, TimeUnit.MILLISECONDS)).isTrue();
     }
 }

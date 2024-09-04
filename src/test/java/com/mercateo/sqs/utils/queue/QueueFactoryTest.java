@@ -1,39 +1,37 @@
 package com.mercateo.sqs.utils.queue;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
-import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.google.common.testing.NullPointerTester;
 
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.model.*;
 
 public class QueueFactoryTest {
 
     @Mock
-    private AmazonSQS amazonSQS;
+    private SqsAsyncClient amazonSQS;
 
     private QueueFactory uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         uut = new QueueFactory(amazonSQS);
     }
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts() throws Exception {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
 
@@ -43,27 +41,32 @@ public class QueueFactoryTest {
     }
 
     @Test
-    public void testGet() {
+    void testGet() {
         // given
         QueueName qn = new QueueName("q1");
-        GetQueueUrlResult queueUrlResult = mock(GetQueueUrlResult.class);
-        when(queueUrlResult.getQueueUrl()).thenReturn("url1");
-        GetQueueAttributesResult attributesResult = mock(GetQueueAttributesResult.class);
-        HashMap<String, String> attributes = new HashMap<>();
-        attributes.put("1", "3");
-        attributes.put("hi", "ho");
-        when(attributesResult.getAttributes()).thenReturn(attributes);
-        when(amazonSQS.getQueueUrl(any(GetQueueUrlRequest.class))).thenReturn(queueUrlResult);
+        GetQueueUrlResponse queueUrlResult = mock(GetQueueUrlResponse.class);
+        when(queueUrlResult.queueUrl()).thenReturn("url1");
+        CompletableFuture<GetQueueUrlResponse> mockGetQueueUrlResult = new CompletableFuture<>();
+        mockGetQueueUrlResult.complete(queueUrlResult);
+
+        GetQueueAttributesResponse attributesResult = mock(GetQueueAttributesResponse.class);
+        HashMap<QueueAttributeName, String> attributes = new HashMap<>();
+        attributes.put(QueueAttributeName.fromValue("1"), "3");
+        attributes.put(QueueAttributeName.fromValue("hi"), "ho");
+        CompletableFuture<GetQueueAttributesResponse> mockGetQueueAttributesResult = new CompletableFuture<>();
+        mockGetQueueAttributesResult.complete(attributesResult);
+
+        when(attributesResult.attributes()).thenReturn(attributes);
+        when(amazonSQS.getQueueUrl(any(GetQueueUrlRequest.class))).thenReturn(mockGetQueueUrlResult);
         when(amazonSQS.getQueueAttributes(any(GetQueueAttributesRequest.class))).thenReturn(
-                attributesResult);
+                mockGetQueueAttributesResult);
 
         // when
         Queue queue = uut.get(qn);
 
         // then
-        assertEquals("url1", queue.getUrl());
-        assertEquals("q1", queue.getName().getId());
-        assertEquals(attributes, queue.getQueueAttributes());
-
+        assertThat(queue.getUrl()).isEqualTo("url1");
+        assertThat(queue.getName().getId()).isEqualTo("q1");
+        assertThat(queue.getQueueAttributes()).isEqualTo(attributes);
     }
 }

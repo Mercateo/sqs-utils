@@ -1,6 +1,6 @@
 package com.mercateo.sqs.utils.queue;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.testing.NullPointerTester;
 
@@ -12,22 +12,23 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 public class QueueTest {
 
     @Mock
-    private Map<String, String> queueAttributes;
+    private Map<QueueAttributeName, String> queueAttributes;
 
     private Queue uut;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         uut = new Queue(new QueueName("123"), "http://url.de", queueAttributes);
     }
 
     @Test
-    public void testNullContracts() throws Exception {
+    void testNullContracts() throws Exception {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
         nullPointerTester.ignore(uut.getClass().getDeclaredMethod("canEqual", Object.class));
@@ -40,14 +41,14 @@ public class QueueTest {
     }
 
     @Test
-    public void testGetDefaultVisibilityTimeout() {
+    void testGetDefaultVisibilityTimeout() {
         // given
-        Mockito.when(queueAttributes.get("VisibilityTimeout")).thenReturn("734");
+        Mockito.when(queueAttributes.get(QueueAttributeName.VISIBILITY_TIMEOUT)).thenReturn("734");
 
         // when
         Duration defaultVisibilityTimeout = uut.getDefaultVisibilityTimeout();
 
         // then
-        assertEquals(734, defaultVisibilityTimeout.getSeconds());
+        assertThat(defaultVisibilityTimeout.getSeconds()).isEqualTo(734);
     }
 }
