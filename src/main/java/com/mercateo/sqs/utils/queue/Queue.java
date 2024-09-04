@@ -20,7 +20,6 @@ import java.util.Map;
 
 import lombok.Data;
 import lombok.NonNull;
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 @Data
 public class Queue {
@@ -32,9 +31,9 @@ public class Queue {
     private final String url;
 
     @NonNull
-    private final Map<QueueAttributeName, String> queueAttributes;
+    private final Map<String, String> queueAttributes;
 
     public Duration getDefaultVisibilityTimeout() {
-        return Duration.ofSeconds(Integer.parseInt(queueAttributes.get(QueueAttributeName.VISIBILITY_TIMEOUT)));
+        return Duration.ofSeconds(Integer.parseInt(queueAttributes.get("VisibilityTimeout")));
     }
 }

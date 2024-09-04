@@ -17,7 +17,7 @@ package com.mercateo.sqs.utils.message.handling;
 
 import java.util.concurrent.ScheduledFuture;
 
-import jakarta.inject.Named;
+import javax.inject.Named;
 
 import lombok.NonNull;
 

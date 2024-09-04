@@ -8,19 +8,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.common.testing.NullPointerTester;
+import io.awspring.cloud.messaging.listener.Acknowledgment;
 
 import java.util.HashMap;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 
-import io.awspring.cloud.sqs.MessagingHeaders;
-import io.awspring.cloud.sqs.listener.acknowledgement.AcknowledgementCallback;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -31,17 +29,15 @@ class MessageHandlingRunnableTest {
     private MessageWorkerWithHeaders<Integer, String> worker;
 
     @Mock
-    private AcknowledgementCallback<Integer> acknowledgment;
+    private Acknowledgment acknowledgment;
 
-    private MessageWrapper<Integer> message;
+    private Message<Integer> message;
 
     @Mock
     private FinishedMessageCallback<Integer, String> finishedMessageCallback;
 
     @Mock
     private SetWithUpperBound<String> messages;
-
-    private UUID messageGeneratedUUID;
 
     @Mock
     private ScheduledFuture<?> visibilityTimeoutExtender;
@@ -52,52 +48,38 @@ class MessageHandlingRunnableTest {
     private MessageHandlingRunnable<Integer, String> uut;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         HashMap<String, Object> headerMap = new HashMap<>();
-        headerMap.put("id", "bf308aa2-bf48-49b8-a839-61611c710431");
-        headerMap.put(MessagingHeaders.ACKNOWLEDGMENT_CALLBACK_HEADER, acknowledgment);
-        message = new MessageWrapper<>(new GenericMessage<>(3, new MessageHeaders(headerMap)));
-        messageGeneratedUUID = message.getMessage().getHeaders().getId();
-        uut = new MessageHandlingRunnable<>(worker, message, finishedMessageCallback, messages,
+        headerMap.put("MessageId", "mid");
+        headerMap.put("Acknowledgment", acknowledgment);
+        message = new GenericMessage<>(3, new MessageHeaders(headerMap));
+        uut = new MessageHandlingRunnable<>(worker, new MessageWrapper<>(message), finishedMessageCallback, messages,
                 visibilityTimeoutExtender, errorHandlingStrategy);
-    }
-
-    @Test
-    void testNullContracts() {
-        // given
-        NullPointerTester nullPointerTester = new NullPointerTester();
-        nullPointerTester.setDefault(MessageWrapper.class, message);
-        nullPointerTester.setDefault(SetWithUpperBound.class, messages);
-
-        // when
-        nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
-        nullPointerTester.testAllPublicConstructors(uut.getClass());
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void testRun() throws Throwable {
         // given
-        when(worker.work(3, message.getMessage().getHeaders())).thenReturn("3S");
-        when(acknowledgment.onAcknowledge(message.getMessage()))
-                .thenReturn(mock(CompletableFuture.class));
+        when(worker.work(3, message.getHeaders())).thenReturn("3S");
+        when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
 
         // when
         uut.run();
 
         // then
         verify(finishedMessageCallback).call(3, "3S");
-        verify(acknowledgment).onAcknowledge(message.getMessage());
+        verify(acknowledgment).acknowledge();
         verify(visibilityTimeoutExtender).cancel(false);
-        verify(messages).remove(messageGeneratedUUID.toString());
+        verify(messages).remove("mid");
     }
 
     @Test
     void testRun_throws_workerException_and_does_not_ack() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
-        doThrow(e).when(worker).work(3, message.getMessage().getHeaders());
+        doThrow(e).when(worker).work(3, message.getHeaders());
         doThrow(e).when(errorHandlingStrategy).handleWorkerException(e, message);
 
         // when
@@ -109,7 +91,7 @@ class MessageHandlingRunnableTest {
         assertThat(result).isEqualTo(e);
         verify(errorHandlingStrategy).handleWorkerException(e, message);
         verify(visibilityTimeoutExtender).cancel(false);
-        verify(messages).remove(messageGeneratedUUID.toString());
+        verify(messages).remove("mid");
     }
 
     @SuppressWarnings("unchecked")
@@ -117,17 +99,16 @@ class MessageHandlingRunnableTest {
     void testRun_throws_workerException_and_acks() throws Throwable {
         // given
         Exception e = new IllegalArgumentException();
-        doThrow(e).when(worker).work(3, message.getMessage().getHeaders());
-        when(acknowledgment.onAcknowledge(message.getMessage()))
-                .thenReturn(mock(CompletableFuture.class));
+        doThrow(e).when(worker).work(3, message.getHeaders());
+        when(acknowledgment.acknowledge()).thenReturn(mock(Future.class));
 
         // when
         uut.run();
 
         // then
         verify(errorHandlingStrategy).handleWorkerException(e, message);
-        verify(acknowledgment).onAcknowledge(message.getMessage());
+        verify(acknowledgment).acknowledge();
         verify(visibilityTimeoutExtender).cancel(false);
-        verify(messages).remove(messageGeneratedUUID.toString());
+        verify(messages).remove("mid");
     }
 }

@@ -16,13 +16,13 @@ import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -52,7 +52,7 @@ public class LongRunningMessageHandlerTest {
     private LongRunningMessageHandler<Integer, String> uut;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         when(queue.getName()).thenReturn(new QueueName("queuename"));
         when(queue.getDefaultVisibilityTimeout()).thenReturn(Duration.ofSeconds(120));
@@ -62,20 +62,19 @@ public class LongRunningMessageHandlerTest {
     }
 
     @Test
-    void testNullContracts() {
+    public void testNullContracts() throws Exception {
         // given
         NullPointerTester nullPointerTester = new NullPointerTester();
         nullPointerTester.setDefault(VisibilityTimeoutExtenderFactory.class,
                 timeoutExtenderFactory);
         nullPointerTester.setDefault(Queue.class, queue);
-
+        
         // when
         nullPointerTester.testInstanceMethods(uut, NullPointerTester.Visibility.PACKAGE);
         nullPointerTester.testConstructors(uut.getClass(), Visibility.PACKAGE);
     }
 
-    @Test
-    void timeUntilTimeOutExtensionTooLarge(){
+    public void timeUntilTimeOutExtensionTooLarge() throws Exception {
 
         // when
         Throwable result = catchThrowable(() -> uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
@@ -86,8 +85,7 @@ public class LongRunningMessageHandlerTest {
         assertThat(result).isInstanceOf(IllegalStateException.class);
     }
 
-    @Test
-    void timeUntilTimeOutNegative(){
+    public void timeUntilTimeOutNegative() throws Exception {
 
         // when
         Throwable result = catchThrowable(() -> uut = new LongRunningMessageHandler<>(timeoutExtensionExecutor, 10, 2,
@@ -99,26 +97,25 @@ public class LongRunningMessageHandlerTest {
     }
 
     @Test
-    void testHandleMessage_handlesExceptionDuringTimeoutExtension() {
+    public void testHandleMessage_handlesExceptionDuringTimeoutExtension() {
         // given
-        MessageWrapper<Integer> message = createMessage();
+        Message<Integer> message = createMessage();
         RuntimeException exception = new RuntimeException("test exception");
         when(timeoutExtensionExecutor.scheduleAtFixedRate(any(), anyLong(), anyLong(), any()))
                 .thenThrow(exception);
 
         // when
-        assertThatThrownBy(() -> uut.handleMessage(message.getMessage())).hasCause(exception);
+        assertThatThrownBy(() -> uut.handleMessage(message)).hasCause(exception);
 
         // then
         assertThat(uut.getMessagesInProcessing().getBackingSet()).isEmpty();
     }
 
-    private MessageWrapper<Integer> createMessage() {
+    private Message<Integer> createMessage() {
         Map<String, Object> headers = new HashMap<>();
-        String messageId = UUID.fromString("bf308aa2-bf48-49b8-a839-61611c710430").toString();
-        headers.put("id", messageId);
+        headers.put("MessageId", "messageId");
 
         MessageHeaders messageHeaders = new MessageHeaders(headers);
-        return new MessageWrapper<>(new GenericMessage<>(1, messageHeaders));
+        return new GenericMessage<>(1, messageHeaders);
     }
 }

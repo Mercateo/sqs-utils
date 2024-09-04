@@ -3,20 +3,22 @@ package com.mercateo.sqs.utils.message.handling;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement;
+import io.awspring.cloud.messaging.listener.Acknowledgment;
+
 import java.util.HashMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 public class LogAndRethrowStrategyTest {
 
     @Mock
-    private Acknowledgement acknowledgment;
+    private Acknowledgment acknowledgment;
 
     private DefaultErrorHandlingStrategy<Integer> uut;
 
@@ -27,23 +29,24 @@ public class LogAndRethrowStrategyTest {
     }
 
     @Test
-    void handle_throws_exception() {
+    public void handle_throws_exception() {
         // Given
         Exception e = new IllegalArgumentException();
-        MessageWrapper<Integer> message = createMessage();
+        Message<Integer> message = createMessage();
 
         // When
         Throwable throwable = catchThrowable(() -> uut.handleWorkerException(e, message));
 
         // Then
         assertThat(throwable).isInstanceOf(IllegalArgumentException.class);
+
     }
 
-    private MessageWrapper<Integer> createMessage() {
+    private Message<Integer> createMessage() {
         HashMap<String, Object> headerMap = new HashMap<>();
-        headerMap.put("id", "mid");
+        headerMap.put("MessageId", "mid");
         headerMap.put("Acknowledgment", acknowledgment);
-        return new MessageWrapper<>(new GenericMessage<>(3, new MessageHeaders(headerMap)));
+        return new GenericMessage<>(3, new MessageHeaders(headerMap));
     }
 
 }

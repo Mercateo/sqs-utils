@@ -15,7 +15,9 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import com.amazonaws.AmazonServiceException;
+
+import org.springframework.messaging.Message;
 
 public interface ErrorHandlingStrategy<I> {
 
@@ -28,7 +30,7 @@ public interface ErrorHandlingStrategy<I> {
      * @param message
      *            that was incorrectly processed
      */
-    void handleWorkerException(Exception e, MessageWrapper<I> message);
+    void handleWorkerException(Exception e, Message<I> message);
     
     /**
      * Defines how a throwable, that is thrown by the worker are handled. If a
@@ -39,7 +41,7 @@ public interface ErrorHandlingStrategy<I> {
      * @param message
      *            that was incorrectly processed
      */
-    void handleWorkerThrowable(Throwable t, MessageWrapper<I> message);
+    void handleWorkerThrowable(Throwable t, Message<I> message);
 
     /**
      * Defines how exceptions, that are thrown by the timeout extension are handled.
@@ -50,7 +52,7 @@ public interface ErrorHandlingStrategy<I> {
      * @param  message that was tried to extend
      */
     
-    void handleExtendVisibilityTimeoutException(AwsServiceException e, MessageWrapper<?> message);
+    void handleExtendVisibilityTimeoutException(AmazonServiceException e, Message<?> message);
     
     /**
      * Defines how exceptions, that are thrown by the message acknowledgement are handled.
@@ -61,6 +63,8 @@ public interface ErrorHandlingStrategy<I> {
      * @param message that was tried to extend
      */
     
-    void handleAcknowledgeMessageException(AwsServiceException e, MessageWrapper<I> message);
+    void handleAcknowledgeMessageException(AmazonServiceException e, Message<I> message);
+
+
 
 }

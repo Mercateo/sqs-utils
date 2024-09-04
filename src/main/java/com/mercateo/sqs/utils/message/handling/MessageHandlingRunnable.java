@@ -14,6 +14,8 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
+import com.amazonaws.AmazonServiceException;
+
 import java.util.concurrent.ScheduledFuture;
 
 import lombok.NonNull;
@@ -21,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.messaging.MessageHeaders;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -57,14 +58,14 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
 
             finishedMessageCallback.call(payload, outcome);
             acknowledge();
-            log.info("message task successfully processed and message acknowledged: " + messageId);
+            log.info("message task successfully processed and message acknowledged: " + messageId); //
         } catch (InterruptedException e) {
             log.info("got interrupted, did not finish: " + messageId, e);
         } catch (Exception e) {
-            errorHandlingStrategy.handleWorkerException(e, messageWrapper);
+            errorHandlingStrategy.handleWorkerException(e, messageWrapper.getMessage());
             acknowledge();
         } catch (Throwable t) {
-            errorHandlingStrategy.handleWorkerThrowable(t, messageWrapper);
+            errorHandlingStrategy.handleWorkerThrowable(t, messageWrapper.getMessage());
             acknowledge();
         } finally {
             visibilityTimeoutExtender.cancel(false);
@@ -75,8 +76,8 @@ public class MessageHandlingRunnable<I, O> implements Runnable {
     private void acknowledge() {
         try {
             messageWrapper.acknowledge();
-        } catch (AwsServiceException e) {
-            errorHandlingStrategy.handleAcknowledgeMessageException(e, messageWrapper);
+        } catch (AmazonServiceException e) {
+            errorHandlingStrategy.handleAcknowledgeMessageException(e, messageWrapper.getMessage());
         } catch (Exception e) {
             log.error("failure during acknowledge " + messageWrapper.getMessageId(), e);
         }

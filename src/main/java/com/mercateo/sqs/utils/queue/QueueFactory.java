@@ -15,42 +15,36 @@
  */
 package com.mercateo.sqs.utils.queue;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
+import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
+
 import java.util.Collections;
 import java.util.Map;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 import lombok.NonNull;
-import lombok.SneakyThrows;
-import software.amazon.awssdk.services.sqs.SqsAsyncClient;
-import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 @Named
 public class QueueFactory {
 
-    private final SqsAsyncClient amazonSQS;
+    private final AmazonSQS amazonSQS;
 
     @Inject
-    public QueueFactory(@NonNull SqsAsyncClient amazonSQS) {
+    public QueueFactory(@NonNull AmazonSQS amazonSQS) {
         this.amazonSQS = amazonSQS;
     }
 
-    @SneakyThrows
     public Queue get(@NonNull QueueName queueName) {
-        GetQueueUrlRequest urlRequest = GetQueueUrlRequest.builder()
-                .queueName(queueName.getId())
-                .build();
-        String queueUrl = amazonSQS.getQueueUrl(urlRequest).get().queueUrl();
+        GetQueueUrlRequest urlRequest = new GetQueueUrlRequest().withQueueName(queueName.getId());
+        String queueUrl = amazonSQS.getQueueUrl(urlRequest).getQueueUrl();
 
-        GetQueueAttributesRequest attributesRequest = GetQueueAttributesRequest
-                .builder()
-                .queueUrl(queueUrl)
-                .attributeNamesWithStrings(Collections.singletonList("All")).build();
-        Map<QueueAttributeName, String> attributes = amazonSQS.getQueueAttributes(attributesRequest)
-                .get().attributes();
+        GetQueueAttributesRequest attributesRequest = new GetQueueAttributesRequest(queueUrl,
+                Collections.singletonList("All"));
+        Map<String, String> attributes = amazonSQS.getQueueAttributes(attributesRequest)
+                .getAttributes();
 
         return new Queue(queueName, queueUrl, attributes);
     }

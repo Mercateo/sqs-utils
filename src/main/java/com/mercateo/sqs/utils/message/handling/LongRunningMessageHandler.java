@@ -19,6 +19,8 @@ import com.mercateo.sqs.utils.queue.Queue;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +29,7 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import org.slf4j.MDC;
 import org.springframework.messaging.Message;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -78,7 +81,24 @@ public class LongRunningMessageHandler<I, O> {
         this.awaitShutDown = awaitShutDown;
         this.errorHandlingStrategy = errorHandlingStrategy;
 
-        messageProcessingExecutor = new ThreadPoolTaskExecutor();
+        messageProcessingExecutor = new ThreadPoolTaskExecutor() {
+            @Override
+            public Future<?> submit(Runnable task) {
+                Map<String, String> current = MDC.getCopyOfContextMap();
+                return super.submit(() -> {
+                    try {
+                        if (current != null) {
+                            current.forEach(MDC::put);
+                        }
+                        task.run();
+                    } finally {
+                        if (current != null) {
+                            current.keySet().forEach(MDC::remove);
+                        }
+                    }
+                });
+            }
+        };
         messageProcessingExecutor.setCorePoolSize(numberOfThreads);
         messageProcessingExecutor.setMaxPoolSize(numberOfThreads);
         messageProcessingExecutor.setThreadNamePrefix(getClass().getSimpleName()+"-"+queue.getName().getId()+"-");
@@ -131,7 +151,6 @@ public class LongRunningMessageHandler<I, O> {
     public void handleMessage(@NonNull Message<I> message) {
         MessageWrapper<I> messageWrapper = new MessageWrapper<>(message);
         String messageId = messageWrapper.getMessageId();
-
         if (messagesInProcessing.contains(messageId)) {
             return;
         }
@@ -173,17 +192,17 @@ public class LongRunningMessageHandler<I, O> {
         return messagesInProcessing.free();
     }
 
-    private void scheduleNewMessageTask(@NonNull MessageWrapper<I> message,
+    private void scheduleNewMessageTask(@NonNull MessageWrapper<I> messageWrapper,
             ScheduledFuture<?> visibilityTimeoutExtender) {
         MessageHandlingRunnable<I, O> messageTask = messageHandlingRunnableFactory.get(worker,
-                message, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender, errorHandlingStrategy);
+                messageWrapper, finishedMessageCallback, messagesInProcessing, visibilityTimeoutExtender, errorHandlingStrategy);
 
         messageProcessingExecutor.submit(messageTask);
     }
 
-    private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull MessageWrapper<I> message) {
+    private ScheduledFuture<?> scheduleNewVisibilityTimeoutExtender(@NonNull MessageWrapper<I> messageWrapper) {
         return timeoutExtensionExecutor.scheduleAtFixedRate(
-                timeoutExtenderFactory.get(message, queue, errorHandlingStrategy),
+                timeoutExtenderFactory.get(messageWrapper, queue, errorHandlingStrategy),
                 timeUntilVisibilityTimeoutExtension.toMillis(),
                 timeUntilVisibilityTimeoutExtension.toMillis(),
                 TimeUnit.MILLISECONDS);

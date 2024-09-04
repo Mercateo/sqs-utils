@@ -1,9 +1,3 @@
-# 1.0.0
-
-* maximum amount of messages per batch must be set manually if custom value is preferred (default remains 10)
-* compatible with Spring Boot 3.1.*
-* use `S3AsyncClient` instead of synchronous `S3Client`
-
 # 0.8.1
 
 * pass MDC context to workers

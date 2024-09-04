@@ -15,19 +15,21 @@
  */
 package com.mercateo.sqs.utils.message.handling;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.mercateo.sqs.utils.queue.Queue;
 import com.mercateo.sqs.utils.queue.QueueFactory;
 import com.mercateo.sqs.utils.queue.QueueName;
 import com.mercateo.sqs.utils.visibility.VisibilityTimeoutExtenderFactory;
 
+import io.awspring.cloud.messaging.listener.SimpleMessageListenerContainer;
+
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 import lombok.NonNull;
 
@@ -43,13 +45,15 @@ public class LongRunningMessageHandlerFactory {
 
     private final ScheduledExecutorService executorService;
 
-    private int maxNumberOfMessagesPerBatch;
+    // visible for testing
+    final int maxNumberOfMessagesPerBatch;
 
     @Inject
     public LongRunningMessageHandlerFactory(
             @NonNull MessageHandlingRunnableFactory messageHandlingRunnableFactory,
             @NonNull VisibilityTimeoutExtenderFactory timeoutExtenderFactory,
-            @NonNull QueueFactory queueFactory) {
+            @NonNull QueueFactory queueFactory,
+            @NonNull SimpleMessageListenerContainer simpleMessageListenerContainer) {
         this.messageHandlingRunnableFactory = messageHandlingRunnableFactory;
         this.timeoutExtenderFactory = timeoutExtenderFactory;
         this.queueFactory = queueFactory;
@@ -69,16 +73,27 @@ public class LongRunningMessageHandlerFactory {
                     }
                 });
 
-        this.maxNumberOfMessagesPerBatch = 10;
+        this.maxNumberOfMessagesPerBatch = extractMaxNumberOfMessagesFromListenerContainer(
+                simpleMessageListenerContainer);
     }
 
-    public void setMaxConcurrentMessages(Integer maxConcurrentMessages) {
-        this.maxNumberOfMessagesPerBatch = maxConcurrentMessages;
-    }
-
-    @VisibleForTesting
-    int getMaxConcurrentMessages() {
-        return this.maxNumberOfMessagesPerBatch;
+    private int extractMaxNumberOfMessagesFromListenerContainer(
+            @NonNull SimpleMessageListenerContainer simpleMessageListenerContainer) {
+        try {
+            Field f = simpleMessageListenerContainer.getClass().getSuperclass().getDeclaredField(
+                    "maxNumberOfMessages");
+            f.setAccessible(true);
+            Integer maxNumberOfMessages = (Integer) f.get(simpleMessageListenerContainer);
+            if (maxNumberOfMessages != null) {
+                return maxNumberOfMessages;
+            } else {
+                // org.springframework.cloud.aws.messaging.listener.AbstractMessageListenerContainer.DEFAULT_MAX_NUMBER_OF_MESSAGES
+                return 10;
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new IllegalStateException(
+                    "Cannot get BatchSize of SimpleMessageListenerContainer", e);
+        }
     }
 
     /**
