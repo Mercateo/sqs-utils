@@ -1,5 +1,10 @@
-# sqs-utils [![Build Status](https://app.travis-ci.com/Mercateo/sqs-utils.svg?branch=master)](https://app.travis-ci.com/github/Mercateo/sqs-utils) [![Coverage Status](https://coveralls.io/repos/github/Mercateo/sqs-utils/badge.svg?branch=master)](https://coveralls.io/github/Mercateo/sqs-utils?branch=master) [![MavenCentral](https://img.shields.io/maven-central/v/com.mercateo.sqs/sqs-utils.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.mercateo.sqs%22%20AND%20a%3A%22sqs-utils%22)
+# sqs-utils [![Static Badge](https://img.shields.io/badge/Status-Deprecated-red) ![Build Status](https://app.travis-ci.com/Mercateo/sqs-utils.svg?branch=master)](https://app.travis-ci.com/github/Mercateo/sqs-utils) [![Coverage Status](https://coveralls.io/repos/github/Mercateo/sqs-utils/badge.svg?branch=master)](https://coveralls.io/github/Mercateo/sqs-utils?branch=master) [![MavenCentral](https://img.shields.io/maven-central/v/com.mercateo.sqs/sqs-utils.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.mercateo.sqs%22%20AND%20a%3A%22sqs-utils%22)
 
+⚠️ **This repository is deprecated and archived.** ⚠️
+
+As of 2024-09-06, this sqs-utils is no longer actively maintained. While the repository has been archived, but feel free to build upon the existing codebase if needed.
+
+## Description
 Provides a way to process multiple long running SQS messages at the same time with as little as possible downtime for assigned worker threads. During processing the message visibility timeout is extended so that message will stay in flight and will not be redelivered.
 
 
