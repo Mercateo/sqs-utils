@@ -18,7 +18,7 @@ jobs:
         cache: maven
         server-id: ossrh
         server-username: SONATYPE_USERNAME
-        server-token: SONATYPE_TOKEN
+        server-password: SONATYPE_TOKEN
     - run: mvn -B -U clean deploy -Dsign-artifacts
       env:
         SONATYPE_USERNAME: ${{ vars.SONATYPE_USERNAME }}
